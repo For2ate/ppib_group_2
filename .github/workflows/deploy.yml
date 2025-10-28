@@ -26,6 +26,11 @@ jobs:
           echo "Using ansible.cfg:"
           cat ansible.cfg
 
+      - name: Prepare secrets
+        run: |
+          cd ansible
+          mkdir secrets
+
       - name: Create vault secrets file from GitHub Secret
         env:
           VAULT_SECRETS: ${{ secrets.VAULT_SECRETS }}
