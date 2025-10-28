@@ -58,7 +58,9 @@ jobs:
       - name: check db vault
         run: |
           cd ansible
+          echo "--- Verifying content of secrets/db_secrets.yaml on runner ---"
           ansible-vault view ./secrets/db_secrets.yaml
+          echo "--- Verification finished ---"
 
       - name: Run Ansible playbooks
         run: |
