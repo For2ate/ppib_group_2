@@ -26,41 +26,17 @@ jobs:
           echo "Using ansible.cfg:"
           cat ansible.cfg
 
-      - name: Prepare secrets
-        run: |
-          cd ansible
-          mkdir secrets
-
-      - name: Create vault secrets file from GitHub Secret
+      - name: Create vault files from GitHub Secrets
         env:
           VAULT_SECRETS_CONTENT: ${{ secrets.VAULT_SECRETS }}
-        run: |
-          cd ansible
-          echo "$VAULT_SECRETS_CONTENT" > secrets/vault_secrets.yaml
-          ansible-vault encrypt secrets/vault_secrets.yaml
-
-      - name: check vault
-        run: |
-          cd ansible
-          ansible-vault view secrets/vault_secrets.yaml
-
-      - name: Create vault users file from GitHub Secret
-        env:
-          VAULT_USERS_DATA_CONTENT: ${{ secrets.VAULT_USERS_DATA }}
-        run: |
-          cd ansible
-          echo "$VAULT_USERS_DATA_CONTENT" > secrets/vault_users.yaml
-          ansible-vault encrypt secrets/vault_users.yaml
-
-
-
-      - name: Create data base vault file from GitHub Secret
-        env:
+          USERS_DATA_CONTENT: ${{ secrets.VAULT_USERS_DATA }}
           DB_SECRETS_CONTENT: ${{ secrets.DB_SECRETS }}
         run: |
           cd ansible
+          mkdir secrets
+          echo "$VAULT_SECRETS_CONTENT" > secrets/vault_secrets.yaml
+          echo "$USERS_DATA_CONTENT" > secrets/vault_users.yaml
           echo "$DB_SECRETS_CONTENT" > secrets/db_secrets.yaml
-          ansible-vault encrypt secrets/db_secrets.yaml
 
       - name: Run Ansible playbooks
         run: |
