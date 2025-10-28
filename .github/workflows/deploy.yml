@@ -34,9 +34,15 @@ jobs:
         run: |
           cd ansible
           mkdir secrets
+          
           echo "$VAULT_SECRETS_CONTENT" > secrets/vault_secrets.yaml
           echo "$USERS_DATA_CONTENT" > secrets/vault_users.yaml
           echo "$DB_SECRETS_CONTENT" > secrets/db_secrets.yaml
+          
+          ansible-vault encrypt secrets/vault_secrets.yaml
+          ansible-vault encrypt secrets/vault_users.yaml
+          ansible-vault encrypt secrets/db_secrets.yaml
+
 
       - name: Run Ansible playbooks
         run: |
