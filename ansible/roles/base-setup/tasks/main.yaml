@@ -1,0 +1,32 @@
+- name: Show configuration summary
+  debug:
+    msg:
+      - "Hostname to set: {{ hostname }}"
+      - "Packages to install: {{ packages_to_install }}"
+
+- name: Set hostname
+  hostname:
+    name: "{{ hostname }}"
+  become: true
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  become: true
+
+- name: Install required packages
+  apt:
+    name: "{{ packages_to_install }}"
+    state: present
+  become: true
+
+- name: Ensure SSH is running
+  service:
+    name: ssh
+    state: started
+    enabled: true
+  become: true
+
+- name: Display success message
+  debug:
+    msg: "Base setup complete for {{ inventory_hostname }}"

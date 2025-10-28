@@ -1,0 +1,43 @@
+
+
+- name: Wait for MySQL to be ready
+  community.mysql.mysql_info:
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_host: 127.0.0.1
+    login_port: "{{ db_port }}"
+  register: mysql_status
+  retries: 10
+  delay: 5
+  until: mysql_status is succeeded
+  become: false
+
+- name: Ensure cms_user can connect only from allowed hosts
+  community.mysql.mysql_user:
+    name: "{{ db_user }}"
+    host: "{{ item }}"
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ db_user_password }}"
+    priv: "{{ db_name }}.*:ALL"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_host: 127.0.0.1
+    login_port: "{{ db_port }}"
+  loop: "{{ groups['db-hosts'] | map('extract', hostvars, 'ansible_host') | list }}"
+  become: false
+
+- name: Ensure read-only user exists and can connect only from allowed hosts
+  community.mysql.mysql_user:
+    name: "{{ db_reader_user }}"
+    host: "{{ item }}"
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ db_reader_password }}"
+    priv: "{{ db_name }}.*:SELECT"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_host: 127.0.0.1
+    login_port: "{{ db_port }}"
+  loop: "{{ groups['db-hosts'] | map('extract', hostvars, 'ansible_host') | list }}"
+  become: false

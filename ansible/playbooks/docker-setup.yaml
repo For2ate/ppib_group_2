@@ -1,0 +1,11 @@
+- name: Install Docker and Docker Compose
+  hosts: servers
+  become: true
+  gather_facts: true
+  gather_subset: ['distribution']  # нужно, чтобы узнать дистрибутив
+
+  vars_files:
+    - ../vars/vault_secrets.yaml
+
+  roles:
+    - role: docker-setup

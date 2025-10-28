@@ -1,0 +1,20 @@
+services:
+  elgg:
+    image: for2aty/elgg:1.0
+    container_name: "{{ cms_container_name }}"
+    restart: "{{ cms_restart_policy }}"
+    ports:
+      - "{{ cms_port }}:80"
+    environment:
+      - ELGG_DB_HOST="{{ cms_db_host }}"
+      - ELGG_DB_NAME="{{ cms_db_name }}"
+      - ELGG_DB_USER="{{ cms_db_user }}"
+      - ELGG_DB_PASSWORD="{{ db_user_password }}"
+    volumes:
+      - "{{ cms_data_path }}:/var/www/html"
+    networks:
+      - "{{ cms_network }}"
+
+networks:
+  "{{ cms_network }}":
+    external: true # Указываем, что сеть уже существует

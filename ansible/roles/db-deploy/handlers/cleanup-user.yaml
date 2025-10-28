@@ -1,0 +1,11 @@
+- name: Drop all non-system MySQL users
+  community.mysql.mysql_query:
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_host: 127.0.0.1
+    login_port: "{{ db_port }}"
+    query: |
+      DELETE FROM mysql.user
+      WHERE user NOT IN ('mysql.sys', 'mysql.session', 'mysql.infoschema', 'root');
+      FLUSH PRIVILEGES;
+  become: false

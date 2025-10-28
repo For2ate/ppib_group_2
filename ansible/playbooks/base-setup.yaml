@@ -1,0 +1,15 @@
+- name: Base system setup (role-based)
+  hosts: servers
+  gather_facts: false
+
+  vars_files:
+    - ../vars/default_vars.yaml
+    - ../vars/vault_secrets.yaml
+
+  pre_tasks:
+    - name: Gather minimal facts (needed by some tasks)
+      ansible.builtin.setup:
+        filter: "ansible_distribution*"
+
+  roles:
+    - role: base-setup

@@ -1,0 +1,10 @@
+- name: Deploy Elgg CMS Server
+  hosts: elgg-servers
+  become: true
+
+  vars_files:
+    - "../vars/vault_secrets.yaml"
+    - "../vars/db_secrets.yaml"
+
+  roles:
+    - role: elgg-deploy

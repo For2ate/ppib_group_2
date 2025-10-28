@@ -1,0 +1,9 @@
+- name: Playbook for users create and add root priv
+  hosts: [servers]
+  become: yes
+  
+  vars_files:
+    - "../vars/vault_secrets.yaml"
+
+  roles:
+    - role: user-management

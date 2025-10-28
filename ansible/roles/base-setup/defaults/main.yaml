@@ -1,0 +1,6 @@
+hostname: default-host
+packages_to_install:
+  - vim
+  - git
+  - curl
+  - htop

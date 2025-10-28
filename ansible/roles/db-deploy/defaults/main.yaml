@@ -1,0 +1,20 @@
+
+# Параметры контейнера
+db_image: "mysql:latest"
+db_container_name: "mysql_db"
+db_restart_policy: "always"
+
+# Сетевые настройки
+db_port: "3306"
+db_network: "team_net"
+
+# Пути для данных и конфигурации (Bind Mount)
+db_base_path: "/opt/docker_data" # Базовый путь для всех данных
+db_data_path: "{{ db_base_path }}/{{ db_container_name }}/data"
+db_project_path: "{{ db_base_path }}/{{ db_container_name }}/config"
+
+# Имена для БД и пользователей
+db_name: "cms_db"
+db_user: "cms_user"
+db_reader_user: "reader"
+

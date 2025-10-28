@@ -1,0 +1,83 @@
+# roles/elgg-deploy/tasks/01_prepare.yml
+---
+- name: Define filenames and temporary directories
+  set_fact:
+    elgg_archive_name: "elgg.zip"
+    elgg_unzip_temp_dir: "/tmp/elgg_unzip_temp"
+
+- name: Ensure base directories for Elgg exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ cms_project_path }}"
+    - "{{ cms_data_path }}"
+
+- name: Check if Elgg seems to be already installed
+  stat:
+    path: "{{ cms_data_path }}/index.php"
+  register: elgg_install_check
+
+- name: Create a temporary directory for unzipping
+  file:
+    path: "{{ elgg_unzip_temp_dir }}"
+    state: directory
+  when: not elgg_install_check.stat.exists
+
+- name: Copy Elgg zip archive to the remote server
+  copy:
+    src: "{{ elgg_archive_name }}"
+    dest: "/tmp/{{ elgg_archive_name }}"
+    mode: '0644'
+  when: not elgg_install_check.stat.exists
+
+- name: Unarchive Elgg to a temporary location
+  unarchive:
+    src: "/tmp/{{ elgg_archive_name }}"
+    dest: "{{ elgg_unzip_temp_dir }}"
+    remote_src: yes
+  when: not elgg_install_check.stat.exists
+
+# --- НОВЫЙ ШАГ: Находим имя распакованной папки ---
+- name: Find the name of the unarchived Elgg directory
+  find:
+    paths: "{{ elgg_unzip_temp_dir }}"
+    file_type: directory
+    depth: 1 # Ищем только на первом уровне вложенности
+  register: unarchived_dir_info
+  when: not elgg_install_check.stat.exists
+
+- name: Set fact for the discovered directory path
+  set_fact:
+    elgg_source_path: "{{ unarchived_dir_info.files[0].path }}"
+  when: not elgg_install_check.stat.exists and unarchived_dir_info.files | length > 0
+  
+- name: Move unarchived files to the final destination
+  copy:
+    remote_src: yes
+    src: "{{ elgg_source_path }}/" # ВАЖНО: слеш в конце
+    dest: "{{ cms_data_path }}"
+  when: elgg_source_path is defined
+
+- name: Set correct permissions on the final Elgg data directory
+  file:
+    path: "{{ cms_data_path }}"
+    state: directory
+    recurse: yes
+    owner: www-data
+    group: www-data
+
+- name: Clean up temporary files and directories
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ elgg_unzip_temp_dir }}"
+    - "/tmp/{{ elgg_archive_name }}"
+  when: not elgg_install_check.stat.exists
+
+- name: Ensure Docker network for services exists
+  community.docker.docker_network:
+    name: "{{ cms_network }}"
+    state: present

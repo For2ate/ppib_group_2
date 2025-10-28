@@ -1,0 +1,12 @@
+docker_users:
+  - skrypinski.ivan
+  - karliuk.aliaksei
+  - konorazov.matvei
+  - ansible
+
+docker_dependencies:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release

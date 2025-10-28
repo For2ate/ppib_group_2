@@ -1,0 +1,12 @@
+---
+- name: Deploy MySQL on srv2
+  hosts: db-servers
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - "../vars/vault_secrets.yaml"
+    - "../vars/db_secrets.yaml"
+
+  roles:
+    - role: db-deploy

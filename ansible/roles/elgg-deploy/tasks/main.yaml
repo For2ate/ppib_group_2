@@ -1,0 +1,5 @@
+- name: Include preparation tasks for Elgg
+  include_tasks: 01_prepare.yml
+
+- name: Include Elgg container deployment tasks
+  include_tasks: 02_deploy.yml

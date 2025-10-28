@@ -1,0 +1,42 @@
+---
+- name: Debug users data
+  ansible.builtin.debug:
+    msg: "Creating users: {{ devops_users }}"
+
+- name: Create devops group
+  become: yes
+  ansible.builtin.group:
+    name: devops
+    state: present
+
+- name: Create users and add to devops group
+  become: yes
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    groups: devops
+    append: yes
+    state: present
+    shell: /bin/bash
+    create_home: yes
+  loop: "{{ devops_users }}"
+  when: devops_users | length > 0
+
+- name: Set ssh keys
+  become: yes
+  ansible.builtin.authorized_key:
+    user: "{{ item.username }}"
+    key: "{{ item.ssh_key }}"
+    state: present
+    manage_dir: yes
+  loop: "{{ devops_users }}"
+  when: devops_users | length > 0
+
+- name: Add sudo priv to devops
+  become: yes
+  ansible.builtin.copy:
+    content: "%devops ALL=(ALL) NOPASSWD: ALL"
+    dest: /etc/sudoers.d/devops
+    owner: root
+    group: root
+    mode: '0440'
+    validate: 'visudo -cf %s'

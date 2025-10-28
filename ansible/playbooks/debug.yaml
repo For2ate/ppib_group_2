@@ -1,0 +1,25 @@
+# playbooks/debug-vault.yml
+---
+- name: Debug Vault Variable Loading
+  hosts: localhost         # Выполняем локально, нам не нужен удаленный хост
+  connection: local        # Указываем, что подключение локальное
+  gather_facts: false      # Сбор фактов не нужен
+
+  # Подключаем ТОЛЬКО проблемный файл
+  vars_files:
+    - "../vars/db_secrets.yml"
+
+  tasks:
+    - name: Print the db_user_password variable
+      debug:
+        msg: "The value of db_user_password is -> {{ db_user_password }}"
+
+    - name: Check if the variable is defined
+      debug:
+        msg: "Variable db_user_password IS DEFINED."
+      when: db_user_password is defined
+
+    - name: Fail if the variable is not defined
+      fail:
+        msg: "I loaded the file, but the variable db_user_password IS NOT DEFINED inside it!"
+      when: db_user_password is not defined

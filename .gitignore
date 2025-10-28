@@ -1,0 +1,55 @@
+# Ansible специфичные файлы
+.vault_pass.txt
+*.retry
+ansible/.vault_pass.txt
+
+# Файлы с секретами
+vars/vault_secrets.yaml
+vars/db_secrets.yaml
+**/vault_secrets.yaml
+**/db_secrets.yaml
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# IDE файлы
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Логи и временные файлы
+*.log
+ansible/*.retry
+
+# GitLab CI артефакты (если будут)
+ci.log
+build/
+
+# Python кэш
+__pycache__/
+*.pyc
+
+# Резервные копии
+*.bak
+*.backup
+
+# Локальные конфиги
+localhost.yml
+local.yml
+
+
+# Файлы подключений
+*.pem
+*.key
+*.crt
+
+# Файлы окружения
+.env
+.venv
+venv/
+
+# Кэш Ansible
+.cache/
+.ansible/

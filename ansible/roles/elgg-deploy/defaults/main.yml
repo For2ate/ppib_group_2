@@ -1,0 +1,21 @@
+cms_container_name: "elgg.team2.lab"
+cms_restart_policy: "always"
+cms_port: "8080"
+
+cms_www_root: "https://team2.com/elgg/"
+
+cms_network: "team_net"
+
+# Пути для сборки и хранения данных
+cms_base_path: "/opt/docker_data"
+# Папка, куда Ansible положит Dockerfile и docker-compose.yml для сборки
+cms_project_path: "{{ cms_base_path }}/{{ cms_container_name }}/build_context"
+# Папка на хосте, где будут храниться данные Elgg
+cms_data_path: "{{ cms_base_path }}/{{ cms_container_name }}/html"
+
+cms_db_host: "mysql_db"
+cms_db_name: "cms_db"
+cms_db_user: "cms_user"
+
+cms_db_user_password: {db_user_password}
+

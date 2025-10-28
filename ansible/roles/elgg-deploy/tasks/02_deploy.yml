@@ -1,0 +1,22 @@
+
+- name: Copy Elgg docker-compose template
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ cms_project_path }}/docker-compose.yml"
+    mode: '0644'
+
+- name: Pull Docker image for Elgg
+  community.docker.docker_image:
+    name: "for2aty/elgg:1.0"
+    source: pull
+  register: pulled_image
+  retries: 3
+  delay: 10
+  until: pulled_image is success
+
+- name: Start Elgg service using the prepared compose file
+  community.docker.docker_compose_v2:
+    project_src: "{{ cms_project_path }}"
+    state: present
+    pull: never # Мы уже скачали образ на предыдущем шаге
+    build: never   # Мы не собираем образ, а используем готовый
