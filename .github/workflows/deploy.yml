@@ -3,12 +3,12 @@ name: Deploy infrastructure with Ansible
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # можно запустить вручную
+  workflow_dispatch: 
 
 jobs:
   deploy:
     name: Run Ansible deployment
-    runs-on: self-hosted  # твой локальный GitHub Runner
+    runs-on: self-hosted  
 
     steps:
       - name: Checkout repository
@@ -30,8 +30,9 @@ jobs:
         env:
           VAULT_SECRETS: ${{ secrets.VAULT_SECRETS }}
         run: |
-          echo "$VAULT_SECRETS" > ansible/vars/vault_secrets.yaml
-          ansible-vault encrypt ansible/vars/vault_secrets.yaml
+          cd ansible
+          echo "$VAULT_SECRETS" > vars/vault_secrets.yaml
+          ansible-vault encrypt vars/vault_secrets.yaml
 
       - name: Check vault decryption
         run: |
