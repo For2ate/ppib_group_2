@@ -26,18 +26,29 @@ jobs:
           echo "Using ansible.cfg:"
           cat ansible.cfg
 
-      - name: Create vault file from GitHub Secret
+      - name: Create vault secrets file from GitHub Secret
         env:
           VAULT_SECRETS: ${{ secrets.VAULT_SECRETS }}
         run: |
           cd ansible
-          echo "$VAULT_SECRETS" > vars/vault_secrets.yaml
-          ansible-vault encrypt vars/vault_secrets.yaml
+          echo "$VAULT_SECRETS" > secrets/vault_secrets.yaml
+          ansible-vault encrypt secrets/vault_secrets.yaml
 
-      - name: Check vault decryption
+      - name: Create vault users file from GitHub Secret
+        env:
+          VAULT_SECRETS: ${{ secrets.VAULT_USERS_DATA }}
         run: |
-          cd ansible 
-          ansible-vault view vars/vault_secrets.yaml
+          cd ansible
+          echo "$VAULT_USERS_DATA" > secrets/vault_users.yaml
+          ansible-vault encrypt secrets/vault_users.yaml
+
+      - name: Create data base vault file from GitHub Secret
+        env:
+          VAULT_SECRETS: ${{ secrets.DB_SECRETS }}
+        run: |
+          cd ansible
+          echo "$DB_SECRETS" > secrets/db_secrets.yaml
+          ansible-vault encrypt secrets/db_secrets.yaml
 
       - name: Run Ansible playbooks
         run: |
@@ -48,7 +59,6 @@ jobs:
           ansible-playbook playbooks/user-management.yaml
           # Настраиваем Docker
           ansible-playbook playbooks/docker-setup.yaml
-
 
       - name: Cleanup vault pass file
         run: rm -f ansible/.vault_pass.txt

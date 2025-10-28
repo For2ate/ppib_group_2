@@ -4,7 +4,7 @@
 
   vars_files:
     - ../vars/default_vars.yaml
-    - ../vars/vault_secrets.yaml
+    - ../secrets/vault_secrets.yaml
 
   pre_tasks:
     - name: Gather minimal facts (needed by some tasks)

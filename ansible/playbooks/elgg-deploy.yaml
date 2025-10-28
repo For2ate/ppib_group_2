@@ -3,8 +3,8 @@
   become: true
 
   vars_files:
-    - "../vars/vault_secrets.yaml"
-    - "../vars/db_secrets.yaml"
+    - "../secrets/vault_secrets.yaml"
+    - "../secrets/db_secrets.yaml"
 
   roles:
     - role: elgg-deploy

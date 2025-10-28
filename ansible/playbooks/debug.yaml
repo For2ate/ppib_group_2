@@ -7,7 +7,7 @@
 
   # Подключаем ТОЛЬКО проблемный файл
   vars_files:
-    - "../vars/db_secrets.yml"
+    - "../secrets/db_secrets.yml"
 
   tasks:
     - name: Print the db_user_password variable

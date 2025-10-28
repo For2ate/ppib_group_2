@@ -4,10 +4,7 @@
 ansible/.vault_pass.txt
 
 # Файлы с секретами
-vars/vault_secrets.yaml
-vars/db_secrets.yaml
-**/vault_secrets.yaml
-**/db_secrets.yaml
+secrets/
 
 # Системные файлы
 .DS_Store
