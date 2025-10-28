@@ -1,0 +1,51 @@
+name: Deploy infrastructure with Ansible
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # можно запустить вручную
+
+jobs:
+  deploy:
+    name: Run Ansible deployment
+    runs-on: self-hosted  # твой локальный GitHub Runner
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Ansible and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Prepare vault password file
+        env:
+          VAULT_PASS: ${{ secrets.VAULT_PASS }}
+        run: |
+          echo "$VAULT_PASS" > ansible/.vault_pass.txt
+
+      - name: Verify ansible.cfg is correct
+        run: |
+          cd ansible
+          echo "Using ansible.cfg:"
+          cat ansible.cfg
+
+      - name: Run Ansible playbooks (full deployment)
+        run: |
+          cd ansible
+          # Разворачиваем базовую систему
+          ansible-playbook playbooks/base-setup.yaml
+          # Управляем пользователями
+          ansible-playbook playbooks/user-management.yaml
+          # Настраиваем Docker
+          ansible-playbook playbooks/docker-setup.yaml
+
+
+      - name: Cleanup vault pass file
+        run: rm -f ansible/.vault_pass.txt
