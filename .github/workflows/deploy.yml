@@ -64,6 +64,10 @@ jobs:
           ansible-playbook playbooks/user-management.yaml
           # Настраиваем Docker
           ansible-playbook playbooks/docker-setup.yaml
+          # Устанавливаем и настраиваем базу данных
+          ansible-playbook playbooks/db-deploy.yaml
+          # Устанавливаем и настраиваем Elgg
+          ansible-playbook playbooks/elgg-deploy.yaml
 
       - name: Cleanup vault pass file
         run: rm -f ansible/.vault_pass.txt
