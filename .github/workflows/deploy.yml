@@ -26,7 +26,10 @@ jobs:
           echo "Using ansible.cfg:"
           cat ansible.cfg
 
-      - name: Run Ansible playbooks (full deployment)
+      - name: Check vault decryption
+        run: ansible-vault view vars/vault_secrets.yaml --vault-password-file .vault_pass.txt
+
+      - name: Run Ansible playbooks
         run: |
           cd ansible
           # Разворачиваем базовую систему
