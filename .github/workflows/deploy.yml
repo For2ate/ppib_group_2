@@ -26,8 +26,14 @@ jobs:
           echo "Using ansible.cfg:"
           cat ansible.cfg
 
-      - name: Check vault decryption
-        run: ansible-vault view vars/vault_secrets.yaml --vault-password-file .vault_pass.txt
+      - name: Create vault file from GitHub Secret
+        env:
+          VAULT_SECRETS: ${{ secrets.VAULT_SECRETS }}
+        run: |
+          echo "$VAULT_SECRETS" > ansible/vars/vault_secrets.yaml
+
+      - name: Check vult decryption
+        run: ansible-vault view vars/vault_secrets.yaml --vault-password-file  ansible/.vault_pass.txt
 
       - name: Run Ansible playbooks
         run: |
