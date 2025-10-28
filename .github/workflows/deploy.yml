@@ -41,7 +41,7 @@ jobs:
 
       - name: Create vault users file from GitHub Secret
         env:
-          VAULT_SECRETS: ${{ secrets.VAULT_USERS_DATA }}
+          VAULT_USERS_DATA: ${{ secrets.VAULT_USERS_DATA }}
         run: |
           cd ansible
           echo "$VAULT_USERS_DATA" > secrets/vault_users.yaml
@@ -49,18 +49,11 @@ jobs:
 
       - name: Create data base vault file from GitHub Secret
         env:
-          VAULT_SECRETS: ${{ secrets.DB_SECRETS }}
+          DB_SECRETS: ${{ secrets.DB_SECRETS }}
         run: |
           cd ansible
           echo "$DB_SECRETS" > secrets/db_secrets.yaml
           ansible-vault encrypt secrets/db_secrets.yaml
-
-      - name: check db vault
-        run: |
-          cd ansible
-          echo "--- Verifying content of secrets/db_secrets.yaml on runner ---"
-          ansible-vault view ./secrets/db_secrets.yaml
-          echo "--- Verification finished ---"
 
       - name: Run Ansible playbooks
         run: |
