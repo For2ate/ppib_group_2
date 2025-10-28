@@ -33,7 +33,7 @@ jobs:
           echo "$VAULT_SECRETS" > ansible/vars/vault_secrets.yaml
 
       - name: Check vault decryption
-        run:
+        run: |
           cd ansible 
           ansible-vault view vars/vault_secrets.yaml
 
