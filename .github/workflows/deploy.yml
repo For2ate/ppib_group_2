@@ -55,6 +55,11 @@ jobs:
           echo "$DB_SECRETS" > secrets/db_secrets.yaml
           ansible-vault encrypt secrets/db_secrets.yaml
 
+      - name: check db vault
+        run: |
+          cd ansible
+          ansible-vault view ./secrets/db_secrets.yaml
+
       - name: Run Ansible playbooks
         run: |
           cd ansible
