@@ -31,6 +31,7 @@ jobs:
           VAULT_SECRETS: ${{ secrets.VAULT_SECRETS }}
         run: |
           echo "$VAULT_SECRETS" > ansible/vars/vault_secrets.yaml
+          ansible-vault encrypt ansible/vars/vault_secrets.yaml
 
       - name: Check vault decryption
         run: |
