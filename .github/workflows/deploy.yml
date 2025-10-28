@@ -32,8 +32,10 @@ jobs:
         run: |
           echo "$VAULT_SECRETS" > ansible/vars/vault_secrets.yaml
 
-      - name: Check vult decryption
-        run: ansible-vault view vars/vault_secrets.yaml
+      - name: Check vault decryption
+        run:
+          cd ansible 
+          ansible-vault view vars/vault_secrets.yaml
 
       - name: Run Ansible playbooks
         run: |
