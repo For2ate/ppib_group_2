@@ -39,7 +39,6 @@
     remote_src: yes
   when: not elgg_install_check.stat.exists
 
-# --- НОВЫЙ ШАГ: Находим имя распакованной папки ---
 - name: Find the name of the unarchived Elgg directory
   find:
     paths: "{{ elgg_unzip_temp_dir }}"

@@ -1,0 +1,6 @@
+services_enabled:
+  - elgg
+  - dbeaver
+  - portainer
+  - reverse_proxy
+  - monitoring_agent

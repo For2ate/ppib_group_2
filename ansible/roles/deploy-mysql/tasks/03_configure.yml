@@ -1,0 +1,120 @@
+# -------------------------------
+# Убедиться, что MySQL запущен
+# -------------------------------
+- name: Wait for MySQL to be ready
+  community.mysql.mysql_info:
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_host: 127.0.0.1
+    login_port: "{{ db_port }}"
+  register: mysql_status
+  retries: 20
+  delay: 4
+  until: mysql_status is succeeded
+  become: false
+
+
+# -------------------------------
+# Получение IP адресов контейнеров сервисов, которым разрешён доступ
+# -------------------------------
+- name: Get Docker container information for allowed services
+  community.docker.docker_container_info:
+    name: "{{ item }}"
+  loop: "{{ mysql_allowed_services }}"
+  register: service_containers
+
+
+- name: Extract container IP addresses
+  set_fact:
+    allowed_service_ips: >
+      {{ allowed_service_ips | default([]) +
+         [ item.containers[0].NetworkSettings.Networks[db_network].IPAddress ] }}
+  loop: "{{ service_containers.results }}"
+  when: item.containers | length > 0
+
+
+# -------------------------------
+# Создание пользователей MySQL для сервисов внутри Docker сети
+# -------------------------------
+- name: Create app user for Docker services
+  community.mysql.mysql_user:
+    name: "{{ db_user }}"
+    host: "{{ item }}"
+    password: "{{ db_user_password }}"
+    priv: "{{ db_name }}.*:ALL"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_host: 127.0.0.1
+    login_port: "{{ db_port }}"
+  loop: "{{ allowed_service_ips }}"
+  when: allowed_service_ips | length > 0
+
+
+
+# -------------------------------
+# Дополнительные разрешённые сервера (из inventory)
+# -------------------------------
+- name: Extract external DB host IPs
+  set_fact:
+    external_db_hosts: "{{ groups['db-hosts'] | map('extract', hostvars, 'ansible_host') | list }}"
+
+
+- name: Create users for external servers
+  community.mysql.mysql_user:
+    name: "{{ db_user }}"
+    host: "{{ item }}"
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ db_user_password }}"
+    priv: "{{ db_name }}.*:ALL"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_host: 127.0.0.1
+    login_port: "{{ db_port }}"
+  loop: "{{ external_db_hosts }}"
+
+
+# -------------------------------
+# Read-only user
+# -------------------------------
+- name: Create read-only user for external servers
+  community.mysql.mysql_user:
+    name: "{{ db_reader_user }}"
+    host: "{{ item }}"
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ db_reader_password }}"
+    priv: "{{ db_name }}.*:SELECT"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_host: 127.0.0.1
+    login_port: "{{ db_port }}"
+  loop: "{{ external_db_hosts }}"
+
+
+# -------------------------------
+# Защита root пользователя
+# -------------------------------
+- name: Remove root@% for security
+  community.mysql.mysql_user:
+    name: root
+    host: "%"
+    state: absent
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_host: 127.0.0.1
+    login_port: "{{ db_port }}"
+
+
+- name: Ensure root@localhost exists
+  community.mysql.mysql_user:
+    name: root
+    host: "localhost"
+    password: "{{ db_root_password }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_host: 127.0.0.1
+    login_port: "{{ db_port }}"

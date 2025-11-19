@@ -3,7 +3,7 @@
   gather_facts: false
 
   vars_files:
-    - ../vars/default_vars.yaml
+    - "../vars/global.yml"
     - ../secrets/vault_secrets.yaml
 
   pre_tasks:

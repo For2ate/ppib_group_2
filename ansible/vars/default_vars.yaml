@@ -1,6 +1,0 @@
-hostname: "{{ server_hostname | default('default-host') }}"
-packages_to_install:
-  - vim
-  - git
-  - curl
-  - htop

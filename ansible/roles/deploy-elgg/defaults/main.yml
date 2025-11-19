@@ -4,10 +4,10 @@ cms_port: "8080"
 
 cms_www_root: "https://team2.com/elgg/"
 
-cms_network: "team_net"
+cms_network: {{global_docker_network}}
 
 # Пути для сборки и хранения данных
-cms_base_path: "/opt/docker_data"
+cms_base_path: {{base_services_dir}}
 # Папка, куда Ansible положит Dockerfile и docker-compose.yml для сборки
 cms_project_path: "{{ cms_base_path }}/{{ cms_container_name }}/build_context"
 # Папка на хосте, где будут храниться данные Elgg

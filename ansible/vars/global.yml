@@ -1,0 +1,14 @@
+env: "test"
+
+hostname: "{{ server_hostname | default('default-host') }}"
+
+default_restart_policy: unless-stopped
+global_docker_network: "team2_net"
+
+base_services_dir: "/opt/services"
+
+packages_to_install:
+  - vim
+  - git
+  - curl
+  - htop

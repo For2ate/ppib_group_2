@@ -1,5 +1,9 @@
 - name: My first play
   hosts: servers
+
+  vars_files:
+    - "../secrets/vault_secrets.yaml"
+  
   tasks:
    - name: Ping my hosts
      ansible.builtin.ping:

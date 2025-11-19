@@ -6,10 +6,10 @@ db_restart_policy: "always"
 
 # Сетевые настройки
 db_port: "3306"
-db_network: "team_net"
+db_network: {{global_docker_network}}
 
 # Пути для данных и конфигурации (Bind Mount)
-db_base_path: "/opt/docker_data" # Базовый путь для всех данных
+db_base_path: {{ base_services_dir }}
 db_data_path: "{{ db_base_path }}/{{ db_container_name }}/data"
 db_project_path: "{{ db_base_path }}/{{ db_container_name }}/config"
 
@@ -18,3 +18,8 @@ db_name: "cms_db"
 db_user: "cms_user"
 db_reader_user: "reader"
 
+mysql_allowed_services:
+  - elgg
+  - dbeaver
+  - grafana
+  - prometheus

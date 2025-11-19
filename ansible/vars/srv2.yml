@@ -1,0 +1,6 @@
+services_enabled:
+  - mysql
+  - prometheus
+  - grafana
+  - alertmanager
+  - monitoring_agent

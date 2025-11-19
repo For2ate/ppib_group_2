@@ -5,6 +5,7 @@
   vars_files:
     - "../secrets/vault_secrets.yaml"
     - "../secrets/db_secrets.yaml"
+    - "../vars/global.yml"
 
   roles:
-    - role: elgg-deploy
+    - role: deploy-elgg
