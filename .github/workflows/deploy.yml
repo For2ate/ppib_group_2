@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch: 
 
+env:
+  ANSIBLE_CONFIG: ansible/ansible.cfg
+
 jobs:
 
   delivery:
@@ -61,6 +64,7 @@ jobs:
         run: |
           cd ansible
           ansible all -m ping -vvv
+          ansible-playbook ./playbooks/ping-host.yml
 
       - name: Cleanup vault pass file
         run: rm -f ansible/.vault_pass.txt
