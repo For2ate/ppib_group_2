@@ -1,8 +1,8 @@
 - name: Include preparation tasks
-  include_tasks: 01_prepare.yaml
+  include_tasks: 01_prepare.yml
 
 - name: Include container deployment tasks
-  include_tasks: 02_deploy.yaml
+  include_tasks: 02_deploy.yml
 
 - name: Include database configuration tasks
-  include_tasks: 03_configure.yaml
+  include_tasks: 03_configure.yml

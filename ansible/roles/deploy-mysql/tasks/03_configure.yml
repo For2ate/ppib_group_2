@@ -1,4 +1,5 @@
-# -------------------------------
+
+# ------------------------------- 
 # Убедиться, что MySQL запущен
 # -------------------------------
 - name: Wait for MySQL to be ready
@@ -8,59 +9,28 @@
     login_host: 127.0.0.1
     login_port: "{{ db_port }}"
   register: mysql_status
-  retries: 20
-  delay: 4
+  retries: 10
+  delay: 5
   until: mysql_status is succeeded
   become: false
 
-
 # -------------------------------
-# Получение IP адресов контейнеров сервисов, которым разрешён доступ
+# Получаем CIDR докер-сети
 # -------------------------------
-- name: Get Docker container information for allowed services
-  community.docker.docker_container_info:
-    name: "{{ item }}"
-  loop: "{{ mysql_allowed_services }}"
-  register: service_containers
+- name: Get Docker network info
+  community.docker.docker_network_info:
+    name: "{{ db_network }}"
+  register: docker_net
 
-
-- name: Extract container IP addresses
+- name: Extract Docker subnet
   set_fact:
-    allowed_service_ips: >
-      {{ allowed_service_ips | default([]) +
-         [ item.containers[0].NetworkSettings.Networks[db_network].IPAddress ] }}
-  loop: "{{ service_containers.results }}"
-  when: item.containers | length > 0
-
+    docker_subnet: "{{ docker_net.network.IPAM.Config[0].Subnet }}"
 
 # -------------------------------
-# Создание пользователей MySQL для сервисов внутри Docker сети
+# Создаём MySQL-пользователя для всей Docker-сети
 # -------------------------------
-- name: Create app user for Docker services
-  community.mysql.mysql_user:
-    name: "{{ db_user }}"
-    host: "{{ item }}"
-    password: "{{ db_user_password }}"
-    priv: "{{ db_name }}.*:ALL"
-    state: present
-    login_user: root
-    login_password: "{{ db_root_password }}"
-    login_host: 127.0.0.1
-    login_port: "{{ db_port }}"
-  loop: "{{ allowed_service_ips }}"
-  when: allowed_service_ips | length > 0
 
-
-
-# -------------------------------
-# Дополнительные разрешённые сервера (из inventory)
-# -------------------------------
-- name: Extract external DB host IPs
-  set_fact:
-    external_db_hosts: "{{ groups['db-hosts'] | map('extract', hostvars, 'ansible_host') | list }}"
-
-
-- name: Create users for external servers
+- name: Ensure cms_user can connect only from allowed hosts
   community.mysql.mysql_user:
     name: "{{ db_user }}"
     host: "{{ item }}"
@@ -72,13 +42,10 @@
     login_password: "{{ db_root_password }}"
     login_host: 127.0.0.1
     login_port: "{{ db_port }}"
-  loop: "{{ external_db_hosts }}"
+  loop: "{{ (groups['db-hosts'] | map('extract', hostvars, 'ansible_host') | list) + [ docker_subnet ] }}"
+  become: false
 
-
-# -------------------------------
-# Read-only user
-# -------------------------------
-- name: Create read-only user for external servers
+- name: Ensure read-only user exists and can connect only from allowed hosts
   community.mysql.mysql_user:
     name: "{{ db_reader_user }}"
     host: "{{ item }}"
@@ -90,31 +57,5 @@
     login_password: "{{ db_root_password }}"
     login_host: 127.0.0.1
     login_port: "{{ db_port }}"
-  loop: "{{ external_db_hosts }}"
-
-
-# -------------------------------
-# Защита root пользователя
-# -------------------------------
-- name: Remove root@% for security
-  community.mysql.mysql_user:
-    name: root
-    host: "%"
-    state: absent
-    login_user: root
-    login_password: "{{ db_root_password }}"
-    login_host: 127.0.0.1
-    login_port: "{{ db_port }}"
-
-
-- name: Ensure root@localhost exists
-  community.mysql.mysql_user:
-    name: root
-    host: "localhost"
-    password: "{{ db_root_password }}"
-    priv: "*.*:ALL,GRANT"
-    state: present
-    login_user: root
-    login_password: "{{ db_root_password }}"
-    login_host: 127.0.0.1
-    login_port: "{{ db_port }}"
+  loop: "{{ (groups['db-hosts'] | map('extract', hostvars, 'ansible_host') | list) + [ docker_subnet ] }}"
+  become: false

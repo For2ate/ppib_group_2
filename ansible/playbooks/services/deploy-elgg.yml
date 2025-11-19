@@ -3,9 +3,9 @@
   become: true
 
   vars_files:
-    - "../secrets/vault_secrets.yaml"
-    - "../secrets/db_secrets.yaml"
-    - "../vars/global.yml"
+    - "../../secrets/vault_secrets.yaml"
+    - "../../secrets/db_secrets.yaml"
+    - "../../vars/global.yml"
 
   roles:
     - role: deploy-elgg
