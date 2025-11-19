@@ -55,6 +55,12 @@ jobs:
         run: |
           echo "$VAULT_PASS" > ansible/.vault_pass.txt
 
+      - name: Debug working directory
+        run: |
+          pwd && ls -la
+          cd ansible
+          ls -la
+
       - name: Validate syntax
         run: |
           cd ansible
