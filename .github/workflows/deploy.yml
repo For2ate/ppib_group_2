@@ -60,7 +60,7 @@ jobs:
         run: |
           cd ansible
           ansible all -m ping -vvv
-          ansible-playbooks ./playbooks/ping-host.yml
+          ansible-playbook ./playbooks/ping-host.yml
 
       - name: Cleanup vault pass file
         run: rm -f ansible/.vault_pass.txt
