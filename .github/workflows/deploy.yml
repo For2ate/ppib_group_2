@@ -3,99 +3,73 @@ name: Deploy infrastructure with Ansible
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
 
   delivery:
-    name: Delivery secrets files
     runs-on: self-hosted
-    steps: 
-    
-      - name: Checkout
-        uses: actions/checkout@v4
+    env:
+      ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
+
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Prepare vault password file
-        env:
-          VAULT_PASS: ${{ secrets.VAULT_PASS }}
-        run: |
-          echo "$VAULT_PASS" > ansible/.vault_pass.txt
+        run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
 
-      - name: Create vault files from GitHub Secrets
-        env:
-          VAULT_SECRETS_CONTENT: ${{ secrets.VAULT_SECRETS }}
-          USERS_DATA_CONTENT: ${{ secrets.VAULT_USERS_DATA }}
-          DB_SECRETS_CONTENT: ${{ secrets.DB_SECRETS }}
+      - name: Create vault files
         run: |
           cd ansible
           mkdir -p secrets
-          
-          echo "$VAULT_SECRETS_CONTENT" > secrets/vault_secrets.yaml
-          echo "$USERS_DATA_CONTENT" > secrets/vault_users.yaml
-          echo "$DB_SECRETS_CONTENT" > secrets/db_secrets.yaml
-          
-          ansible-vault encrypt secrets/vault_secrets.yaml
-          ansible-vault encrypt secrets/vault_users.yaml
-          ansible-vault encrypt secrets/db_secrets.yaml
+          echo "${{ secrets.VAULT_SECRETS }}" > secrets/vault_secrets.yaml
+          echo "${{ secrets.VAULT_USERS_DATA }}" > secrets/vault_users.yaml
+          echo "${{ secrets.DB_SECRETS }}" > secrets/db_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
 
-      - name: Cleanup vault pass file
-        run: rm -f ansible/.vault_pass.txt
+      - run: rm -f ansible/.vault_pass.txt
+
 
   validate:
-    name: Lint and Validate Ansible
     runs-on: self-hosted
-    needs: delivery 
+    needs: delivery
+    env:
+      ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Prepare vault password file
-        env:
-          VAULT_PASS: ${{ secrets.VAULT_PASS }}
-        run: |
-          echo "$VAULT_PASS" > ansible/.vault_pass.txt
-
-      - name: Validate syntax
-        run: |
-          cd ansible
-          ansible-lint playbooks || echo "Lint warnings only"
+      - name: Prepare vault pass
+        run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
 
       - name: Test inventory
         run: |
           cd ansible
           ansible all -m ping -vvv
-          ansible-playbook ./playbooks/ping-host.yml
+          ansible-playbook playbooks/ping-host.yml
 
-      - name: Cleanup vault pass file
-        run: rm -f ansible/.vault_pass.txt
-  
+      - run: rm -f ansible/.vault_pass.txt
+
+
   deploy:
-    name: Run Ansible deployment
-    runs-on: self-hosted  
+    runs-on: self-hosted
     needs: validate
+    env:
+      ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Prepare vault password file
-        env:
-          VAULT_PASS: ${{ secrets.VAULT_PASS }}
-        run: |
-          echo "$VAULT_PASS" > ansible/.vault_pass.txt
+      - name: Prepare vault pass
+        run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
 
-      - name: Run Ansible playbooks
+      - name: Run playbooks
         run: |
           cd ansible
-          # Разворачиваем базовую систему
           ansible-playbook playbooks/server-configurations/base-setup.yml
-          # Управляем пользователями
           ansible-playbook playbooks/server-configurations/user-management.yml
-          # Настраиваем Docker
           ansible-playbook playbooks/server-configurations/docker-setup.yml
-          # Устанавливаем и настраиваем базу данных
           ansible-playbook playbooks/services/deploy-mysql.yml
-          # Устанавливаем и настраиваем Elgg
           ansible-playbook playbooks/services/deploy-elgg.yml
 
-      - name: Cleanup vault pass file
-        run: rm -f ansible/.vault_pass.txt
+      - run: rm -f ansible/.vault_pass.txt
