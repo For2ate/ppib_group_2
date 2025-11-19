@@ -50,3 +50,5 @@ venv/
 # Кэш Ansible
 .cache/
 .ansible/
+
+/services/

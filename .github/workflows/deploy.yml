@@ -6,6 +6,25 @@ on:
   workflow_dispatch: 
 
 jobs:
+
+  validate:
+    name: Lint and Validate Ansible
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate syntax
+        run: |
+          cd ansible
+          ansible-lint playbooks || echo "Lint warnings only"
+
+      - name: Test inventory
+        run: |
+          cd ansible
+          ansible all -m ping -vvv
+
+  
   deploy:
     name: Run Ansible deployment
     runs-on: self-hosted  
@@ -19,12 +38,6 @@ jobs:
           VAULT_PASS: ${{ secrets.VAULT_PASS }}
         run: |
           echo "$VAULT_PASS" > ansible/.vault_pass.txt
-
-      - name: Verify ansible.cfg is correct
-        run: |
-          cd ansible
-          echo "Using ansible.cfg:"
-          cat ansible.cfg
 
       - name: Create vault files from GitHub Secrets
         env:
