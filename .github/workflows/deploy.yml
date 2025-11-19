@@ -41,6 +41,7 @@ jobs:
   validate:
     name: Lint and Validate Ansible
     runs-on: self-hosted
+    needs: delivery 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,7 +69,7 @@ jobs:
   deploy:
     name: Run Ansible deployment
     runs-on: self-hosted  
-
+    needs: validate
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -83,15 +84,15 @@ jobs:
         run: |
           cd ansible
           # Разворачиваем базовую систему
-          ansible-playbook playbooks/base-setup.yml
+          ansible-playbook playbooks/server-configurations/base-setup.yml
           # Управляем пользователями
-          ansible-playbook playbooks/user-management.yml
+          ansible-playbook playbooks/server-configurations/user-management.yml
           # Настраиваем Docker
-          ansible-playbook playbooks/docker-setup.yml
+          ansible-playbook playbooks/server-configurations/docker-setup.yml
           # Устанавливаем и настраиваем базу данных
-          ansible-playbook playbooks/deploy-mysql.yml
+          ansible-playbook playbooks/services/deploy-mysql.yml
           # Устанавливаем и настраиваем Elgg
-          ansible-playbook playbooks/deploy-elgg.yml
+          ansible-playbook playbooks/services/deploy-elgg.yml
 
       - name: Cleanup vault pass file
         run: rm -f ansible/.vault_pass.txt
