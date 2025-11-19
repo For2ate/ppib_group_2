@@ -14,6 +14,9 @@ jobs:
     name: Delivery secrets files
     runs-on: self-hosted
     steps: 
+    
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Prepare vault password file
         env:
@@ -55,12 +58,6 @@ jobs:
         run: |
           echo "$VAULT_PASS" > ansible/.vault_pass.txt
 
-      - name: Debug working directory
-        run: |
-          pwd && ls -la
-          cd ansible
-          ls -la
-
       - name: Validate syntax
         run: |
           cd ansible
@@ -69,6 +66,7 @@ jobs:
       - name: Test inventory
         run: |
           cd ansible
+          ansible all -m ping -vvv
           ansible-playbook ./playbooks/ping-host.yml
 
       - name: Cleanup vault pass file
