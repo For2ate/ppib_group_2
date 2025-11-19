@@ -4,3 +4,6 @@ packages_to_install:
   - git
   - curl
   - htop
+  - python3 
+  - libpam-modules
+  - libselinux1

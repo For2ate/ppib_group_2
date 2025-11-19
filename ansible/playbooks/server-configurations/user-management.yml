@@ -3,8 +3,8 @@
   become: yes
   
   vars_files:
-    - "../secrets/vault_secrets.yaml"
-    - "../secrets/vault_users.yaml"
+    - "../../secrets/vault_secrets.yaml"
+    - "../../secrets/vault_users.yaml"
 
   roles:
     - role: user-management
