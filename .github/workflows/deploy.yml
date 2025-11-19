@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-  delivery_vars:
+  delivery:
     name: Delivery secrets files
     runs-on: self-hosted
     steps: 
