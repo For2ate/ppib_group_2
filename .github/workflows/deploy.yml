@@ -25,7 +25,7 @@ jobs:
           DB_SECRETS_CONTENT: ${{ secrets.DB_SECRETS }}
         run: |
           cd ansible
-          mkdir secrets
+          mkdir -p secrets
           
           echo "$VAULT_SECRETS_CONTENT" > secrets/vault_secrets.yaml
           echo "$USERS_DATA_CONTENT" > secrets/vault_users.yaml
