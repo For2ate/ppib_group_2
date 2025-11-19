@@ -45,8 +45,8 @@ jobs:
       - name: Test inventory
         run: |
           cd ansible
-          ansible all -m ping -vvv
           ansible-playbook playbooks/ping-host.yml
+          ansible all -m ping -vvv
 
       - run: rm -f ansible/.vault_pass.txt
 
