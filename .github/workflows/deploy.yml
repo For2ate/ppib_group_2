@@ -19,6 +19,26 @@ jobs:
       - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
 
+      - name: Prepare SSH environment
+        run: |
+          mkdir -p ansible/.ssh
+          chmod 700 ansible/.ssh
+
+      - name: Add bastion private key
+        run: |
+          echo "${{ secrets.BASTION_PRIVATE_KEY }}" > ansible/.ssh/id_rsa_bastion
+          chmod 600 ansible/.ssh/id_rsa_bastion
+
+      - name: Add SSH config
+        run: |
+          echo "${{ secrets.SSH_CONFIG }}" > ansible/.ssh/config
+          chmod 600 ~/.ssh/config
+
+      - name: Validate SSH setup
+        run: |
+          echo "SSH config exists:"; ls -l ansible/.ssh/config
+          echo "SSH key exists:"; ls -l ansible/.ssh/id_rsa_bastion
+
       - name: Create encrypted vault files
         run: |
           cd ansible
@@ -120,7 +140,7 @@ jobs:
             playbooks/services/deploy-mysql.yml \
             playbooks/services/deploy-elgg.yml;
           do
-            ansible-playbook -vvv "$pb"
+            ansible-playbook "$pb"
           done
 
       - run: rm -f ansible/.vault_pass.txt

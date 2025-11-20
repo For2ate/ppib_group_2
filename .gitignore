@@ -4,7 +4,10 @@
 ansible/.vault_pass.txt
 
 # Файлы с секретами
+*/id_rsa_bastion
 secrets/
+
+*/.ssh
 
 # Системные файлы
 .DS_Store
