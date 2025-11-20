@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
+
 jobs:
 
   delivery:
@@ -13,28 +16,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install SSH config
+        run: |
+          mkdir -p ansible/.ssh
+          echo "${{ secrets.SSH_CONFIG }}" > ansible/.ssh/config
+          echo "${{ secrets.BASTION_PRIVATE_KEY }}" > ansible/.ssh/id_rsa_bastion
+          chmod 700 ansible/.ssh
+          chmod 600 ansible/.ssh/*
+
       - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
-
-      - name: Prepare SSH environment
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
-      - name: Add bastion private key
-        run: |
-          echo "${{ secrets.BASTION_PRIVATE_KEY }}" > ~/.ssh/id_rsa_bastion
-          chmod 600 ~/.ssh/id_rsa_bastion
-
-      - name: Add SSH config
-        run: |
-          echo "${{ secrets.SSH_CONFIG }}" > ~/.ssh/config
-          chmod 600 ~/.ssh/config
-
-      - name: Validate SSH setup
-        run: |
-          echo "SSH config exists:"; ls -l ~/.ssh/config
-          echo "SSH key exists:"; ls -l ~/.ssh/id_rsa_bastion
 
       - name: Create encrypted vault files
         run: |
@@ -51,7 +42,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: vaults
-          path: ansible/secrets/*.yaml
+          path: | 
+            ansible/secrets/*.yaml
+            ansible/.ssh/*
+        
 
 
   validate:
@@ -65,7 +59,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: vaults
-          path: ansible/secrets
+          path: | 
+            ansible/secrets/*.yaml
+            ansible/.ssh/*
 
       - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
@@ -122,7 +118,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: vaults
-          path: ansible/secrets
+          path: | 
+            ansible/secrets/*.yaml
+            ansible/.ssh/*
 
       - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
