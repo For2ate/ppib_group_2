@@ -19,7 +19,7 @@ jobs:
       - name: Install SSH config
         run: |
           mkdir -p ansible/.ssh
-          echo "${{ secrets.SSH_CONFIG }}" > ansible/.ssh/config
+          echo "${{ secrets.SSH_CONFIG }}" > ansible/.ssh/ssh_config
           echo "${{ secrets.BASTION_PRIVATE_KEY }}" > ansible/.ssh/id_rsa_bastion
           chmod 700 ansible/.ssh
           chmod 600 ansible/.ssh/*
@@ -44,7 +44,7 @@ jobs:
           name: vaults
           path: | 
             ansible/secrets/*.yaml
-            ansible/.ssh/*
+            ansible/.ssh
         
 
 
@@ -61,7 +61,7 @@ jobs:
           name: vaults
           path: | 
             ansible/secrets/*.yaml
-            ansible/.ssh/*
+            ansible/.ssh
 
       - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
@@ -120,7 +120,7 @@ jobs:
           name: vaults
           path: | 
             ansible/secrets/*.yaml
-            ansible/.ssh/*
+            ansible/.ssh
 
       - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
