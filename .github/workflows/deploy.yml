@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
+
 jobs:
 
   delivery:
@@ -16,16 +19,14 @@ jobs:
       - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
 
-      - name: Create vault files
+      - name: Create encrypted vault files
         run: |
           cd ansible
           mkdir -p secrets
-          echo "${{ secrets.VAULT_SECRETS }}" > secrets/vault_secrets.yaml
-          echo "${{ secrets.VAULT_USERS_DATA }}" > secrets/vault_users.yaml
-          echo "${{ secrets.DB_SECRETS }}" > secrets/db_secrets.yaml
-          ansible-vault encrypt secrets/vault_secrets.yaml
-          ansible-vault encrypt secrets/vault_users.yaml
-          ansible-vault encrypt secrets/db_secrets.yaml
+          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          echo "${{ secrets.VAULT_USERS_DATA }}"  > secrets/vault_users.yaml
+          echo "${{ secrets.DB_SECRETS }}"        > secrets/db_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
 
       - run: rm -f ansible/.vault_pass.txt
 
@@ -33,7 +34,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: vaults
-          path: ansible/secrets/*
+          path: ansible/secrets/*.yaml
 
 
   validate:
@@ -41,22 +42,53 @@ jobs:
     needs: delivery
 
     steps:
-
       - uses: actions/checkout@v4
 
-      - name: Download vaults
+      - name: Download vault files
         uses: actions/download-artifact@v4
         with:
           name: vaults
           path: ansible/secrets
 
-      - name: Prepare vault pass
+      - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
 
-      - name: Test inventory
+      # -------------------------
+      # HUMAN-FRIENDLY PROJECT OVERVIEW
+      # -------------------------
+      - name: List playbooks (summary for newcomers)
+        run: |
+          echo "## 📚 Available Playbooks" >> $GITHUB_STEP_SUMMARY
+          find ansible/playbooks -name "*.yml" -maxdepth 3 >> $GITHUB_STEP_SUMMARY
+
+      - name: Show tasks inside each playbook
+        run: |
+          echo "## 📝 Tasks inside Playbooks" >> $GITHUB_STEP_SUMMARY
+          for pb in $(find ansible/playbooks -name "*.yml"); do
+            echo "### ▶ $pb" >> $GITHUB_STEP_SUMMARY
+            ansible-playbook $pb --list-tasks >> $GITHUB_STEP_SUMMARY 2>/dev/null
+            echo "" >> $GITHUB_STEP_SUMMARY
+          done
+
+      # -------------------------
+      # QUALITY CHECKS
+      # -------------------------
+      - name: Run ansible-lint
         run: |
           cd ansible
-          ansible-playbook playbooks/ping-host.yml
+          ansible-lint .
+
+      - name: Syntax-check only playbooks
+        run: |
+          cd ansible
+          for pb in $(find playbooks -name "*.yml"); do
+            echo "🔎 Syntax check: $pb"
+            ansible-playbook "$pb" --syntax-check
+          done
+
+      - name: Ping hosts
+        run: |
+          cd ansible
           ansible all -m ping -vvv
 
       - run: rm -f ansible/.vault_pass.txt
@@ -69,22 +101,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download vaults
+      - name: Download vault files
         uses: actions/download-artifact@v4
         with:
           name: vaults
           path: ansible/secrets
 
-      - name: Prepare vault pass
+      - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
 
-      - name: Run playbooks
+      - name: Run deployment playbooks
         run: |
           cd ansible
-          ansible-playbook playbooks/server-configurations/base-setup.yml
-          ansible-playbook playbooks/server-configurations/user-management.yml
-          ansible-playbook playbooks/server-configurations/docker-setup.yml
-          ansible-playbook playbooks/services/deploy-mysql.yml
-          ansible-playbook playbooks/services/deploy-elgg.yml
+          for pb in \
+            playbooks/server-configurations/base-setup.yml \
+            playbooks/server-configurations/user-management.yml \
+            playbooks/server-configurations/docker-setup.yml \
+            playbooks/services/deploy-mysql.yml \
+            playbooks/services/deploy-elgg.yml;
+          do
+            ansible-playbook -vvv "$pb"
+          done
 
       - run: rm -f ansible/.vault_pass.txt
