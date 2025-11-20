@@ -21,23 +21,23 @@ jobs:
 
       - name: Prepare SSH environment
         run: |
-          mkdir -p ansible/.ssh
-          chmod 700 ansible/.ssh
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
 
       - name: Add bastion private key
         run: |
-          echo "${{ secrets.BASTION_PRIVATE_KEY }}" > ansible/.ssh/id_rsa_bastion
-          chmod 600 ansible/.ssh/id_rsa_bastion
+          echo "${{ secrets.BASTION_PRIVATE_KEY }}" > ~/.ssh/id_rsa_bastion
+          chmod 600 ~/.ssh/id_rsa_bastion
 
       - name: Add SSH config
         run: |
-          echo "${{ secrets.SSH_CONFIG }}" > ansible/.ssh/config
+          echo "${{ secrets.SSH_CONFIG }}" > ~/.ssh/config
           chmod 600 ~/.ssh/config
 
       - name: Validate SSH setup
         run: |
-          echo "SSH config exists:"; ls -l ansible/.ssh/config
-          echo "SSH key exists:"; ls -l ansible/.ssh/id_rsa_bastion
+          echo "SSH config exists:"; ls -l ~/.ssh/config
+          echo "SSH key exists:"; ls -l ~/.ssh/id_rsa_bastion
 
       - name: Create encrypted vault files
         run: |
