@@ -6,6 +6,8 @@ ansible/.vault_pass.txt
 # Файлы с секретами
 */id_rsa_bastion
 secrets/
+vault_secrets.yaml
+
 
 */.ssh
 
