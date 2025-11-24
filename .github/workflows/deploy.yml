@@ -29,8 +29,7 @@ jobs:
           ansible-vault encrypt secrets/*.yaml
 
           mkdir -p inventory/group_vars/all
-          echo "${{ secrets.VAULT_SECRETS }}"     > inventory/group_vars/all/vault_secrets.yaml
-          ansible-vault encrypt inventory/group_vars/all/vault_secrets.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
 
       - run: rm -f ansible/.vault_pass.txt
 
@@ -39,8 +38,7 @@ jobs:
         with:
           name: vaults
           path: | 
-            ansible/secrets/*.yaml
-            ansible/inventory/group_vars/
+            ansible/
         
 
 
@@ -56,8 +54,7 @@ jobs:
         with:
           name: vaults
           path: | 
-            ansible/secrets/*.yaml
-            ansible/inventory/group_vars/
+            ansible/
 
       - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
@@ -98,7 +95,7 @@ jobs:
       - name: Ping hosts
         run: |
           cd ansible
-          ansible all -m ping -vvv
+          ansible all -m ping -vvv 
 
       - run: rm -f ansible/.vault_pass.txt
 
@@ -115,8 +112,7 @@ jobs:
         with:
           name: vaults
           path: | 
-            ansible/secrets/*.yaml
-            ansible/inventory/group_vars/
+            ansible/
 
       - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
