@@ -38,7 +38,8 @@ jobs:
         with:
           name: vaults
           path: | 
-            ansible/
+            ansible/secrets
+            ansible/inventory/group_vars
         
 
 
@@ -54,7 +55,8 @@ jobs:
         with:
           name: vaults
           path: | 
-            ansible/
+            ansible/secrets
+            ansible/inventory/group_vars
 
       - name: Prepare vault password file
         run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
