@@ -4,6 +4,30 @@
       - "Hostname to set: {{ hostname }}"
       - "Packages to install: {{ packages_to_install }}"
 
+- name: 🚑 Fix APT - Kill stale processes
+  shell: |
+    pkill -9 apt-get || true
+    pkill -9 apt || true
+    pkill -9 dpkg || true
+    pkill -9 unattended-upgr || true
+  become: true
+  ignore_errors: true
+
+- name: 🚑 Fix APT - Remove lock files
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /var/lib/dpkg/lock
+    - /var/lib/dpkg/lock-frontend
+    - /var/lib/apt/lists/lock
+    - /var/cache/apt/archives/lock
+  become: true
+
+- name: 🚑 Fix APT - Reconfigure dpkg
+  command: dpkg --configure -a
+  become: true
+
 - name: Wait for APT lock to be released
   shell: |
     while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
