@@ -59,7 +59,8 @@ jobs:
       - name: Ping hosts
         run: |
           cd ansible
-          ansible-playbook ./playbooks/ping-host.yml
+          ansible all -m ping -vvv
+        # ansible-playbook ./playbooks/ping-host.yml
 
       - run: rm -f ansible/.vault_pass.txt
 

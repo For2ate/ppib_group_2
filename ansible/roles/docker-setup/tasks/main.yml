@@ -1,6 +1,26 @@
----
 
-- name: Install Docker dependencies
+# --- ЭТАП 1: Очистка ---
+
+- name: 🧹 Remove broken Docker repo file
+  file:
+    path: /etc/apt/sources.list.d/docker.list
+    state: absent
+  become: true
+  tags: ["preinstall"]
+
+- name: 🧹 Remove any old/wrong keys
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/apt/keyrings/docker.gpg
+    - /etc/apt/keyrings/docker.asc
+  become: true
+  tags: ["preinstall"]
+
+# --- ЭТАП 2: Подготовка ---
+
+- name: Install Docker dependencies (now safe to run)
   apt:
     name: "{{ docker_dependencies }}"
     state: present
@@ -8,37 +28,38 @@
   tags: ["preinstall"]
 
 - name: Create directory for apt keyrings
-  become: yes
   file:
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
-    owner: root
-    group: root
+  become: true
   tags: ["preinstall"]
 
-- name: Download Docker's official GPG key
-  become: yes
+# --- ЭТАП 3: Установка ключа и репозитория ---
+
+- name: Download Docker's official GPG key (as .asc)
   get_url:
     url: "{{ docker_repo_key_url }}"
-    dest: /etc/apt/keyrings/docker.gpg
-    mode: '0644'
-    force: true
+    dest: /etc/apt/keyrings/docker.asc  
+    mode: '0644' 
+  become: true
   tags: ["preinstall"]
 
 - name: Add the Docker repository
-  become: yes
   apt_repository:
-    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] {{ docker_repo_url }} {{ ansible_distribution_release }} stable"
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] {{ docker_repo_url }} {{ ansible_distribution_release }} stable"
     state: present
     filename: docker
+    update_cache: yes
+  become: true
   tags: ["preinstall"]
+
+# --- ЭТАП 4: Установка Docker ---
 
 - name: Install Docker packages
   apt:
     name: "{{ docker_packages }}"
     state: present
-    update_cache: yes
   tags: ["docker"]
 
 - name: Ensure Docker service is running
