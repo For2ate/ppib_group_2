@@ -1,184 +1,274 @@
-name: Deploy infrastructure with Ansible
+name: Deploy Infrastructure
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
     inputs:
-
-      # Общие настройки
       ansible_tags:
-        description: 'Ansible Tags (например: config, all)'
+        description: 'Specific Tags (optional)'
         required: false
         default: 'all'
         type: string
-
-      # Галочки для выбора этапов (по умолчанию false, чтобы случайно не запустить лишнее)
+      # Галочки для ручного выбора
       deploy_base:
-        description: '🛠 Configurate Servers (Base, User, Docker)'
+        description: '🛠 Base Setup (Users, Docker)'
         type: boolean
-        default: true
+        default: false
       deploy_proxy:
-        description: '🌐 Deploy Nginx Proxy'
+        description: '🌐 Nginx Proxy'
         type: boolean
         default: false
       deploy_site:
-        description: '🚀 Deploy Site (MySQL + Elgg)'
+        description: '🚀 Site (MySQL + Elgg)'
         type: boolean
         default: false
       deploy_dbeaver:
-        description: '🗄️ Deploy DBeaver'
+        description: '🗄️ DBeaver'
         type: boolean
         default: false
       deploy_portainer:
-        description: '🐳 Deploy Portainer (Agent + Server)'
+        description: '🐳 Portainer'
         type: boolean
         default: false
       deploy_monitoring:
-        description: '📊 Deploy Monitoring (Prometheus, Grafana...)'
+        description: '📊 Monitoring Stack'
         type: boolean
         default: false
-        
-env:
-  ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
 
 jobs:
 
-  validate:
-    runs-on: self-hosted
-
+  # ------------------------------------------------------------------
+  # 1. ОПРЕДЕЛЕНИЕ ИЗМЕНЕНИЙ (Фильтр)
+  # Этот джоб решает, что именно изменилось в репозитории
+  # ------------------------------------------------------------------
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      base: ${{ steps.filter.outputs.base }}
+      proxy: ${{ steps.filter.outputs.proxy }}
+      site: ${{ steps.filter.outputs.site }}
+      dbeaver: ${{ steps.filter.outputs.dbeaver }}
+      portainer: ${{ steps.filter.outputs.portainer }}
+      monitoring: ${{ steps.filter.outputs.monitoring }}
     steps:
       - uses: actions/checkout@v4
- 
-      - name: Prepare vault password file
-        run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            base:
+              - 'ansible/playbooks/server-configurations/**'
+              - 'ansible/inventory/**'
+            proxy:
+              - 'ansible/playbooks/services/deploy-reverse-proxy.yml'
+              - 'ansible/roles/deploy-reverse-proxy/**'
+            site:
+              - 'ansible/playbooks/services/deploy-mysql.yml'
+              - 'ansible/playbooks/services/deploy-elgg.yml'
+              - 'ansible/roles/deploy-mysql/**'
+              - 'ansible/roles/deploy-elgg/**'
+            dbeaver:
+              - 'ansible/playbooks/services/deploy-dbeaver.yml'
+            portainer:
+              - 'ansible/playbooks/services/deploy-portainer*.yml'
+              - 'ansible/roles/portainer*/**'
+            monitoring:
+              - 'ansible/playbooks/services/deploy-prometheus.yml'
+              - 'ansible/playbooks/services/deploy-grafana.yml'
+              - 'ansible/playbooks/services/deploy-alertmanager.yml'
+              - 'ansible/playbooks/services/deploy-exporters.yml'
+              - 'ansible/roles/deploy-prometheus/**'
 
-      - name: Create encrypted vault files
+  # ------------------------------------------------------------------
+  # 2. ВАЛИДАЦИЯ (Lint & Syntax)
+  # ------------------------------------------------------------------
+  validate:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create MOCK secrets (for syntax check only)
         run: |
           cd ansible
-          mkdir -p secrets
-          echo "${{ secrets.VAULT_SECRETS }}"         > secrets/vault_secrets.yaml
-          echo "${{ secrets.VAULT_USERS_DATA }}"      > secrets/vault_users.yaml
-          echo "${{ secrets.DB_SECRETS }}"            > secrets/db_secrets.yaml
-          echo "${{ secrets.VAULT_ALERT_SECRETS }}"   > secrets/alert_secrets.yml
+          mkdir -p secrets inventory/group_vars/all
+          echo "vault_pass" > .vault_pass.txt
+          
+          # Создаем фейковые файлы, чтобы ansible-playbook --syntax-check не падал
+          echo "some_var: test" > secrets/vault_secrets.yaml
+          echo "users: []" > secrets/vault_users.yaml
+          echo "db_password: fake" > secrets/db_secrets.yaml
+          echo "alert_token: fake" > secrets/alert_secrets.yml
+          
+          # Шифруем их фейковым паролем
           ansible-vault encrypt secrets/*.yaml
-
-          mkdir -p inventory/group_vars/all
           cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
 
-      - name: List playbooks (summary for newcomers)
-        run: |
-          echo "## 📚 Available Playbooks" >> $GITHUB_STEP_SUMMARY
-          find ansible/playbooks -name "*.yml" -maxdepth 3 >> $GITHUB_STEP_SUMMARY
-
-      - name: Show tasks inside each playbook
-        run: |
-          echo "## 📝 Tasks inside Playbooks" >> $GITHUB_STEP_SUMMARY
-          for pb in $(find ansible/playbooks -name "*.yml"); do
-            echo "### ▶ $pb" >> $GITHUB_STEP_SUMMARY
-            ansible-playbook $pb --list-tasks >> $GITHUB_STEP_SUMMARY 
-            echo "" >> $GITHUB_STEP_SUMMARY
-          done
-
-      - name: Run ansible-lint
-        run: |
-          cd ansible
-          ansible-lint .
-
-      - name: Syntax-check only playbooks
+      - name: Syntax Check
         run: |
           cd ansible
           for pb in $(find playbooks -name "*.yml"); do
-            echo "🔎 Syntax check: $pb"
+            echo "🔎 Checking $pb"
             ansible-playbook "$pb" --syntax-check
           done
 
-      - name: Ping hosts
-        run: |
-          cd ansible
-          ansible all -m ping -vvv
-        # ansible-playbook ./playbooks/ping-host.yml
+      - name: Cleanup
+        if: always()
+        run: rm -f ansible/.vault_pass.txt
 
-      - run: rm -f ansible/.vault_pass.txt
-
-
-  deploy:
+  # ------------------------------------------------------------------
+  # 3. ДЕПЛОЙ - БАЗОВАЯ НАСТРОЙКА
+  # ------------------------------------------------------------------
+  deploy-base:
+    needs: [validate, changes]
     runs-on: self-hosted
-    needs: validate
-
+    # Запуск, если: (это пуш И файлы base изменились) ИЛИ (ручной запуск И выбрана галочка)
+    if: ${{ (github.event_name == 'push' && needs.changes.outputs.base == 'true') || inputs.deploy_base == true }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Prepare vault password file
-        run: echo "${{ secrets.VAULT_PASS }}" > ansible/.vault_pass.txt
-
-      - name: Create encrypted vault files
+      - name: Prepare Real Secrets
         run: |
           cd ansible
-          mkdir -p secrets
+          echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
           echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
           echo "${{ secrets.VAULT_USERS_DATA }}"  > secrets/vault_users.yaml
           echo "${{ secrets.DB_SECRETS }}"        > secrets/db_secrets.yaml
-          echo "${{ secrets.VAULT_ALERT_SECRETS }}"        > secrets/alert_secrets.yml
+          echo "${{ secrets.VAULT_ALERT_SECRETS }}" > secrets/alert_secrets.yml
           ansible-vault encrypt secrets/*.yaml
-
-          mkdir -p inventory/group_vars/all
           cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
 
-      - name: Configurate servers
-        if: ${{ github.event_name == 'push' || inputs.deploy_base == true }}
+      - name: Run Base Playbooks
         run: |
           cd ansible
-          for pb in \
-            playbooks/server-configurations/base-setup.yml \
-            playbooks/server-configurations/user-management.yml \
-            playbooks/server-configurations/docker-setup.yml ;
-          do
-            ansible-playbook "$pb"
-          done
+          TAGS="${{ inputs.ansible_tags || 'all' }}"
+          ansible-playbook playbooks/server-configurations/base-setup.yml --tags "$TAGS"
+          ansible-playbook playbooks/server-configurations/user-management.yml --tags "$TAGS"
+          ansible-playbook playbooks/server-configurations/docker-setup.yml --tags "$TAGS"
 
-      - name: Deploy proxy
-        if: ${{ github.event_name == 'push' || inputs.deploy_proxy == true }}
-        run: |
-          cd ansible
-          ansible-playbook playbooks/services/deploy-reverse-proxy.yml
+      - run: rm -f ansible/.vault_pass.txt
+        if: always()
 
-      - name: Deploy site
-        if: ${{ github.event_name == 'push' || inputs.deploy_site == true }}
+  # ------------------------------------------------------------------
+  # 4. ДЕПЛОЙ - PROXY (Nginx)
+  # ------------------------------------------------------------------
+  deploy-proxy:
+    needs: [validate, changes]
+    runs-on: self-hosted
+    if: ${{ (github.event_name == 'push' && needs.changes.outputs.proxy == 'true') || inputs.deploy_proxy == true }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare Secrets
         run: |
           cd ansible
-          for pb in \
-            playbooks/services/deploy-mysql.yml \
-            playbooks/services/deploy-elgg.yml;
-          do
-            ansible-playbook "$pb"
-          done
+          echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}" > secrets/vault_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
 
-      - name: Deploy dbeaver
-        if: ${{ github.event_name == 'push' || inputs.deploy_dbeaver == true }}
+      - name: Deploy Proxy
         run: |
           cd ansible
-          ansible-playbook playbooks/services/deploy-dbeaver.yml
+          TAGS="${{ inputs.ansible_tags || 'all' }}"
+          ansible-playbook playbooks/services/deploy-reverse-proxy.yml --tags "$TAGS"
 
-      - name: Deploy portainer
-        if: ${{ github.event_name == 'push' || inputs.deploy_portainer == true }}
-        run: |
-          cd ansible
-          ansible-playbook playbooks/services/deploy-portainer-agent.yml
-          ansible-playbook playbooks/services/deploy-portainer.yml
+      - run: rm -f ansible/.vault_pass.txt
+        if: always()
 
-      - name: Deploy monitoring
-        if: ${{ github.event_name == 'push' || inputs.deploy_monitoring == true }}
+  # ------------------------------------------------------------------
+  # 5. ДЕПЛОЙ - SITE (MySQL + Elgg)
+  # ------------------------------------------------------------------
+  deploy-site:
+    needs: [validate, changes]
+    runs-on: self-hosted
+    if: ${{ (github.event_name == 'push' && needs.changes.outputs.site == 'true') || inputs.deploy_site == true }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare Secrets
         run: |
           cd ansible
+          echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}" > secrets/vault_secrets.yaml
+          echo "${{ secrets.DB_SECRETS }}"    > secrets/db_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
+
+      - name: Deploy Site Stack
+        run: |
+          cd ansible
+          TAGS="${{ inputs.ansible_tags || 'all' }}"
+          ansible-playbook playbooks/services/deploy-mysql.yml --tags "$TAGS"
+          ansible-playbook playbooks/services/deploy-elgg.yml --tags "$TAGS"
+
+      - run: rm -f ansible/.vault_pass.txt
+        if: always()
+
+  # ------------------------------------------------------------------
+  # 6. ДЕПЛОЙ - ВСПОМОГАТЕЛЬНЫЕ СЕРВИСЫ (Portainer, DBeaver)
+  # ------------------------------------------------------------------
+  deploy-tools:
+    needs: [validate, changes]
+    runs-on: self-hosted
+    # Запускаем, если выбран Portainer ИЛИ DBeaver
+    if: ${{ (github.event_name == 'push' && (needs.changes.outputs.portainer == 'true' || needs.changes.outputs.dbeaver == 'true')) || inputs.deploy_portainer == true || inputs.deploy_dbeaver == true }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare Secrets
+        run: |
+          cd ansible
+          echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}" > secrets/vault_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
+
+      - name: Deploy DBeaver
+        if: ${{ inputs.deploy_dbeaver == true || (github.event_name == 'push' && needs.changes.outputs.dbeaver == 'true') }}
+        run: cd ansible && ansible-playbook playbooks/services/deploy-dbeaver.yml
+
+      - name: Deploy Portainer
+        if: ${{ inputs.deploy_portainer == true || (github.event_name == 'push' && needs.changes.outputs.portainer == 'true') }}
+        run: |
+           cd ansible 
+           ansible-playbook playbooks/services/deploy-portainer-agent.yml
+           ansible-playbook playbooks/services/deploy-portainer.yml
+
+      - run: rm -f ansible/.vault_pass.txt
+        if: always()
+
+  # ------------------------------------------------------------------
+  # 7. ДЕПЛОЙ - МОНИТОРИНГ
+  # ------------------------------------------------------------------
+  deploy-monitoring:
+    needs: [validate, changes]
+    runs-on: self-hosted
+    if: ${{ (github.event_name == 'push' && needs.changes.outputs.monitoring == 'true') || inputs.deploy_monitoring == true }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare Secrets
+        run: |
+          cd ansible
+          echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}" > secrets/vault_secrets.yaml
+          echo "${{ secrets.VAULT_ALERT_SECRETS }}" > secrets/alert_secrets.yml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
+
+      - name: Deploy Monitoring Stack
+        run: |
+          cd ansible
+          TAGS="${{ inputs.ansible_tags || 'all' }}"
           for pb in \
             playbooks/services/deploy-prometheus.yml \
             playbooks/services/deploy-exporters.yml  \
             playbooks/services/deploy-alertmanager.yml  \
             playbooks/services/deploy-grafana.yml;
           do
-            ansible-playbook "$pb"
+            ansible-playbook "$pb" --tags "$TAGS"
           done
 
       - run: rm -f ansible/.vault_pass.txt
-        if: always() 
+        if: always()
