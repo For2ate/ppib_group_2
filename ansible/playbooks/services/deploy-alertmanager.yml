@@ -9,4 +9,4 @@
     - "../../secrets/alert_secrets.yml"
 
   roles:
-    - role: roles/deploy-alertmanager
+    - role: deploy-alertmanager
