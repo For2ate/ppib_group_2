@@ -15,14 +15,24 @@
     - "{{ proxy_certs_dir }}"
     - "{{ proxy_logs_dir }}"
 
-- name: Copy SSL certificates
-  copy:
-    src: "certs/{{ item }}"
-    dest: "{{ proxy_certs_dir }}/{{ item }}"
-    mode: '0600'
-  loop:
-    - "{{ ssl_cert_file }}"
-    - "{{ ssl_key_file }}"
+- name: Ensure OpenSSL is installed
+  package:
+    name: openssl
+    state: present
+
+- name: Generate Self-Signed SSL Certificate
+  shell: >
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048
+    -keyout {{ proxy_certs_dir }}/{{ ssl_key_file }}
+    -out {{ proxy_certs_dir }}/{{ ssl_cert_file }}
+    -subj "/C=US/ST=State/L=City/O=Team2/CN=localhost"
+  args:
+    creates: "{{ proxy_certs_dir }}/{{ ssl_cert_file }}" # Не пересоздавать, если файл уже есть
+
+- name: Set permissions for private key
+  file:
+    path: "{{ proxy_certs_dir }}/{{ ssl_key_file }}"
+    mode: '0600' # Ключ должен быть доступен только владельцу
 
 - name: Copy Nginx configuration
   template:
