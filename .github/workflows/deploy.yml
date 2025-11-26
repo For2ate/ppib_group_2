@@ -88,19 +88,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create MOCK secrets (for syntax check only)
+      - name: Prepare Secrets
         run: |
           cd ansible
+          echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
           mkdir -p secrets inventory/group_vars/all
-          echo "vault_pass" > .vault_pass.txt
-          
-          # Создаем фейковые файлы, чтобы ansible-playbook --syntax-check не падал
-          echo "some_var: test" > secrets/vault_secrets.yaml
-          echo "users: []" > secrets/vault_users.yaml
-          echo "db_password: fake" > secrets/db_secrets.yaml
-          echo "alert_token: fake" > secrets/alert_secrets.yml
-          
-          # Шифруем их фейковым паролем
+          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          echo "${{ secrets.VAULT_USERS_DATA }}"  > secrets/vault_users.yaml
+          echo "${{ secrets.DB_SECRETS }}"        > secrets/db_secrets.yaml
+          echo "${{ secrets.VAULT_ALERT_SECRETS }}" > secrets/alert_secrets.yml
           ansible-vault encrypt secrets/*.yaml
           cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
 
