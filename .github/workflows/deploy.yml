@@ -42,7 +42,7 @@ jobs:
           echo "## 📝 Tasks inside Playbooks" >> $GITHUB_STEP_SUMMARY
           for pb in $(find ansible/playbooks -name "*.yml"); do
             echo "### ▶ $pb" >> $GITHUB_STEP_SUMMARY
-            ansible-playbook $pb --list-tasks >> $GITHUB_STEP_SUMMARY 2>/dev/null
+            ansible-playbook $pb --list-tasks >> $GITHUB_STEP_SUMMARY 
             echo "" >> $GITHUB_STEP_SUMMARY
           done
 
