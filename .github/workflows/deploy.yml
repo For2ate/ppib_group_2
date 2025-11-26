@@ -23,7 +23,10 @@ jobs:
         run: |
           cd ansible
           mkdir -p secrets
-          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          echo "${{ secrets.VAULT_SECRETS }}"         > secrets/vault_secrets.yaml
+          echo "${{ secrets.VAULT_USERS_DATA }}"      > secrets/vault_users.yaml
+          echo "${{ secrets.DB_SECRETS }}"            > secrets/db_secrets.yaml
+          echo "${{ secrets.VAULT_ALERT_SECRETS }}"   > secrets/alert_secrets.yml
           ansible-vault encrypt secrets/*.yaml
 
           mkdir -p inventory/group_vars/all
