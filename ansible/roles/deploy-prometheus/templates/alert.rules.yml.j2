@@ -1,0 +1,148 @@
+{% raw %}
+groups:
+# =============================================================
+# Группа 1: Правила для мониторинга самих сервисов мониторинга
+# =============================================================
+- name: monitoring-meterts
+  rules:
+    - alert: InstanceDown
+      # Выражение: срабатывает, если метрика up, которую Prometheus
+      # автоматически создает для каждой цели, равна 0 (цель недоступна).
+      expr: up == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Цель мониторинга недоступна: {{ $labels.instance }}"
+        description: "Сервис {{ $labels.job }} на хосте {{ $labels.instance }} не отвечает более 1 минуты."
+
+# =============================================================
+# Группа 2: Правила для хост-машин (Node Exporter)
+# =============================================================
+- name: host-metrics
+  rules:
+    - alert: HostHighCpuLoad
+      # Выражение: срабатывает, если средняя загрузка CPU за 1 минуту
+      # превышает количество ядер. Это говорит о том, что процессору
+      # не хватает ресурсов для обработки всех задач в очереди.
+      expr: node_load1 > count(node_cpu_seconds_total{mode="system"}) by (instance)
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Высокая загрузка CPU на хосте {{ $labels.instance }}"
+        description: "Средняя загрузка LA1 на {{ $labels.instance }} превысила 100% ({{ $value | printf `%.2f` }}) и держится более 5 минут."
+
+    - alert: HostHighMemoryUsage
+      # Выражение: срабатывает, если использовано более 85% доступной оперативной памяти.
+      expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Используется много оперативной памяти на {{ $labels.instance }}"
+        description: "На хосте {{ $labels.instance }} использовано более 85% оперативной памяти. Текущее использование: {{ $value | printf `%.2f` }}%."
+
+    - alert: HostLowDiskSpace
+      # Выражение: срабатывает, если на диске осталось менее 15% свободного места.
+      # fstype!~"tmpfs|squashfs" исключает временные файловые системы.
+      expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|squashfs"} / node_filesystem_size_bytes{fstype!~"tmpfs|squashfs"}) * 100 < 15
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Заканчивается место на диске {{ $labels.instance }}"
+        description: "На устройстве {{ $labels.device }} хоста {{ $labels.instance }} осталось менее 15% свободного места."
+
+    - alert: HostDiskWillFillIn4Hours
+      # Выражение: Предиктивное правило. На основе тренда за последний час,
+      # прогнозирует, что свободное место на диске закончится в ближайшие 4 часа.
+      expr: predict_linear(node_filesystem_free_bytes{fstype=~"ext4|xfs"}[1h], 4 * 3600) < 0
+      for: 15m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Диск на {{ $labels.instance }} скоро переполнится!"
+        description: "Прогнозируется, что устройство {{ $labels.device }} на хосте {{ $labels.instance }} будет переполнено в течение следующих 4 часов."
+
+# =============================================================
+# Группа 3: Правила для Docker контейнеров (cAdvisor)
+# =============================================================
+- name: container-metrics
+  rules:
+    - alert: ContainerHighCpuUsage
+      # Выражение: срабатывает, если контейнер использует более 80% одного ядра CPU.
+      # name!="" исключает общую статистику по cAdvisor.
+      expr: sum(rate(container_cpu_usage_seconds_total{name!=""}[5m])) by (name, instance) * 100 > 80
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Высокое потребление CPU контейнером {{ $labels.name }}"
+        description: "Контейнер {{ $labels.name }} на хосте {{ $labels.instance }} использует более 80% CPU на протяжении 5 минут."
+
+    - alert: ContainerHighMemoryUsage
+      # Выражение: срабатывает, если контейнер использует более 85% от выделенного ему лимита памяти.
+      expr: (sum(container_memory_usage_bytes{name!=""}) by (name, instance) / sum(container_spec_memory_limit_bytes{name!=""}) by (name, instance)) * 100 > 85
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Высокое потребление RAM контейнером {{ $labels.name }}"
+        description: "Контейнер {{ $labels.name }} на хосте {{ $labels.instance }} использует более 85% от своего лимита памяти."
+
+    - alert: ContainerRestarting
+      # Выражение: срабатывает, если контейнер перезапускался более 2 раз за последние 15 минут.
+      # Это явный признак того, что с приложением внутри что-то не так (падает, OOM killer и т.д.).
+      expr: increase(container_restarts_total{name!=""}[15m]) > 2
+      for: 0m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Контейнер {{ $labels.name }} постоянно перезапускается"
+        description: "На хосте {{ $labels.instance }} контейнер {{ $labels.name }} был перезапущен более 2 раз за последние 15 минут."
+- name: self-monitoring
+  rules:
+    - alert: PrometheusTargetScrapeFailed
+      # Выражение: срабатывает, если Prometheus не смог собрать метрики
+      # с какой-либо цели (дублирует `up == 0`, но иногда полезно иметь отдельно).
+      expr: scrape_health_info == 0
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Prometheus не может собрать метрики с {{ $labels.instance }}"
+        description: "Сбор метрик с джобы {{ $labels.job }} ({{ $labels.instance }}) завершается неудачей."
+
+    - alert: PrometheusRuleEvaluationFailed
+      # Выражение: срабатывает, если Prometheus не может вычислить
+      # какое-либо из правил алертинга из-за синтаксической ошибки или
+      # слишком долгого выполнения.
+      expr: prometheus_rule_evaluation_failures_total > 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Ошибка вычисления правил в Prometheus"
+        description: "Prometheus не может обработать правила из файла `{{ $labels.rule_group }}`. Проверьте конфигурацию и логи."
+
+    - alert: AlertmanagerConfigReloadFailed
+      expr: alertmanager_config_last_reload_successful == 0
+      for: 0m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Ошибка перезагрузки конфигурации Alertmanager"
+        description: "Alertmanager не смог применить последнюю конфигурацию. Проверьте `alertmanager.yml` на ошибки и посмотрите логи."
+
+    - alert: AlertmanagerNotificationsFailed
+      # Выражение: срабатывает, если Alertmanager не смог отправить уведомление
+      # в какой-либо из каналов (например, в Telegram).
+      expr: rate(alertmanager_notifications_failed_total[2m]) > 0
+      for: 0m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Alertmanager не может отправить уведомление в {{ $labels.integration }}"
+        description: "Не удалось отправить уведомление для {{ $labels.integration }}. Проверьте токен, ID чата и сетевой доступ из контейнера Alertmanager."
+{% endraw %} 

@@ -1,0 +1,19 @@
+---
+# Настройки контейнера
+dbeaver_image: "dbeaver/cloudbeaver:latest"
+dbeaver_container_name: "dbeaver.team2.lab"
+dbeaver_restart_policy: "unless-stopped"
+
+# Сеть (берем глобальную или дефолтную)
+dbeaver_network: "{{ global_docker_network | default('team2_net') }}"
+
+# Порт веб-интерфейса
+dbeaver_port: "8978"
+
+# Переменные окружения CloudBeaver
+dbeaver_root_uri: "/dbeaver"
+dbeaver_server_url: "https://localhost"
+
+# Пути 
+dbeaver_project_dir: "{{ base_services_dir }}/dbeaver"
+dbeaver_data_dir: "{{ dbeaver_project_dir }}/data"

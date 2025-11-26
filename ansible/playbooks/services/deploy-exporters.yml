@@ -1,0 +1,10 @@
+- name: Deploy Node Exporter and cAdvisor
+  hosts: servers 
+  become: true
+  
+  vars_files:
+    - "../../vars/global.yml"
+    - "../../secrets/vault_secrets.yaml"
+
+  roles:
+    - role: deploy-exporters

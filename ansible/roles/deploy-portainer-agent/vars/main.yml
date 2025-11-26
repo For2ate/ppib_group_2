@@ -1,0 +1,13 @@
+portainer_agent_image: "portainer/agent:2.33.2"
+portainer_agent_container_name: "portainer_agent"
+portainer_agent_restart_policy: "always"
+portainer_agent_network: "{{ global_docker_network | default('team2_net') }}"
+
+# Порт агента (внешний)
+portainer_agent_port: "9001"
+
+# Пути
+portainer_agent_project_dir: "{{ base_services_dir }}/portainer-agent"
+# У агента обычно нет конфигов, которые мы монтируем, 
+# но если понадобятся, можно добавить по аналогии:
+# portainer_agent_config_dir: "{{ portainer_agent_project_dir }}/config"

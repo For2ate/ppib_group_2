@@ -1,0 +1,24 @@
+services:
+    prometheus:
+        image: "{{ prometheus_image }}"
+        container_name: "{{ prometheus_container_name }}"
+        restart: "{{ prometheus_restart_policy }}"
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - ./alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+            # Важно: Prometheus работает от пользователя nobody (UID 65534),
+            # поэтому права на папку data на хосте должны быть открыты
+            - "{{ prometheus_data_dir }}:/prometheus"
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.enable-lifecycle" # Позволяет делать reload конфига через API
+            - "--storage.tsdb.retention.time=15d" # Хранить данные 15 дней
+        networks:
+            - "{{ monitoring_network }}"
+
+networks:
+    "{{ monitoring_network }}":
+        external: true

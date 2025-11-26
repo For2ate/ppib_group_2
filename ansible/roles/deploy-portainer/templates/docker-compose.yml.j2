@@ -1,0 +1,25 @@
+services:
+    portainer:
+        image: "{{ portainer_image }}"
+        container_name: "{{ portainer_container_name }}"
+        restart: "{{ portainer_restart_policy }}"
+
+{% if portainer_publish_port | bool %}
+        ports:
+        - "{{ portainer_host_port }}:9000"
+{% endif %}
+
+        volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+        - "{{ portainer_data_dir }}:/data"
+
+        networks:
+        - "{{ portainer_network }}"
+
+{% if portainer_base_url | length > 0 %}
+        command: "--base-url {{ portainer_base_url }}"
+{% endif %}
+
+networks:
+    {{ portainer_network }}:
+        external: true

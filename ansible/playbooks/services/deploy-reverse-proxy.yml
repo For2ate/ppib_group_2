@@ -1,0 +1,11 @@
+---
+- name: Deploy Nginx Reverse Proxy
+  hosts: proxy-servers
+  become: true
+  
+  vars_files:
+    - "../../vars/global.yml"
+    - "../../secrets/vault_secrets.yaml"
+
+  roles:
+    - role: deploy-reverse-proxy

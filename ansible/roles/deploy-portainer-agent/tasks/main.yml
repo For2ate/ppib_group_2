@@ -1,0 +1,29 @@
+- name: Ensure Docker network exists
+  community.docker.docker_network:
+    name: "{{ portainer_agent_network }}"
+    state: present
+
+- name: Ensure Portainer Agent project directory exists
+  ansible.builtin.file:
+    path: "{{ portainer_agent_project_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Generate docker-compose.yml from template
+  ansible.builtin.template:
+    src: "docker-compose.yml.j2"
+    dest: "{{ portainer_agent_project_dir }}/docker-compose.yml"
+    mode: '0644'
+
+
+- name: Deploy Portainer Agent stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ portainer_agent_project_dir }}"
+    state: present
+    pull: always
+    remove_orphans: yes
+  register: deploy_result
+
+- name: Show Portainer Agent deployment info
+  ansible.builtin.debug:
+    var: deploy_result

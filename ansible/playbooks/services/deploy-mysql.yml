@@ -1,6 +1,6 @@
 ---
 - name: Deploy MySQL on srv2
-  hosts: db-servers
+  hosts: db-hosts
   become: true
   gather_facts: false
 

@@ -1,0 +1,18 @@
+services:
+  nginx:
+    image: "{{ proxy_image }}"
+    container_name: "{{ proxy_container_name }}"
+    restart: "{{ proxy_restart_policy }}"
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - "{{ proxy_config_dir }}:/etc/nginx/conf.d"
+      - "{{ proxy_certs_dir }}:/etc/ssl/private"
+      - "{{ proxy_logs_dir }}:/var/log/nginx"
+    networks:
+      - "{{ proxy_network }}"
+
+networks:
+  "{{ proxy_network }}":
+    external: true

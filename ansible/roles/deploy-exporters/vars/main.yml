@@ -1,0 +1,14 @@
+---
+# Пути
+exporters_project_dir: "{{ base_services_dir }}/exporters"
+
+# Образы
+node_exporter_image: "quay.io/prometheus/node-exporter:latest"
+cadvisor_image: "gcr.io/cadvisor/cadvisor:latest"
+
+# Порт для cAdvisor (Node Exporter всегда на 9100, это сложно поменять без костылей)
+cadvisor_port: "9101"
+
+# Имя хоста для формирования имен контейнеров
+# Берем из inventory (server_hostname="srv1"), либо ansible_hostname
+host_identifier: "{{ server_hostname | default(inventory_hostname) }}"

@@ -82,20 +82,57 @@ jobs:
           echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
           echo "${{ secrets.VAULT_USERS_DATA }}"  > secrets/vault_users.yaml
           echo "${{ secrets.DB_SECRETS }}"        > secrets/db_secrets.yaml
+          echo "${{ secrets.VAULT_ALERT_SECRETS }}"        > secrets/alert_secrets.yml
           ansible-vault encrypt secrets/*.yaml
 
           mkdir -p inventory/group_vars/all
           cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
 
-      - name: Run deployment playbooks
+      - name: Configurate servers
         run: |
           cd ansible
           for pb in \
             playbooks/server-configurations/base-setup.yml \
             playbooks/server-configurations/user-management.yml \
-            playbooks/server-configurations/docker-setup.yml \
+            playbooks/server-configurations/docker-setup.yml ;
+          do
+            ansible-playbook "$pb"
+          done
+
+      - name: Deploy proxy
+        run: |
+          cd ansible
+          ansible-playbook playbooks/services/deploy-reverse-proxy.yml
+
+      - name: Deploy site
+        run: |
+          cd ansible
+          for pb in \
             playbooks/services/deploy-mysql.yml \
             playbooks/services/deploy-elgg.yml;
+          do
+            ansible-playbook "$pb"
+          done
+
+      - name: Deploy dbeaver
+        run: |
+          cd ansible
+          ansible-playbook playbooks/services/deploy-dbeaver.yml
+
+      - name: Deploy portainer
+        run: |
+          cd ansible
+          ansible-playbook playbooks/services/deploy-portainer-agent.yml
+          ansible-playbook playbooks/services/deploy-portainer.yml
+
+      - name: Deploy monitoring
+        run: |
+          cd ansible
+          for pb in \
+            playbooks/services/deploy-prometheus.yml \
+            playbooks/services/deploy-exporters.yml  \
+            playbooks/services/deploy-alertmanager.yml  \
+            playbooks/services/deploy-grafana.yml;
           do
             ansible-playbook "$pb"
           done

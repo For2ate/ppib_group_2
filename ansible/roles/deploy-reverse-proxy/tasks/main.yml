@@ -1,0 +1,43 @@
+---
+- name: Ensure Docker network exists
+  community.docker.docker_network:
+    name: "{{ proxy_network }}"
+    state: present
+
+- name: Create Nginx directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ proxy_project_dir }}"
+    - "{{ proxy_config_dir }}"
+    - "{{ proxy_certs_dir }}"
+    - "{{ proxy_logs_dir }}"
+
+- name: Copy SSL certificates
+  copy:
+    src: "certs/{{ item }}"
+    dest: "{{ proxy_certs_dir }}/{{ item }}"
+    mode: '0600'
+  loop:
+    - "{{ ssl_cert_file }}"
+    - "{{ ssl_key_file }}"
+
+- name: Copy Nginx configuration
+  template:
+    src: nginx.conf.j2
+    dest: "{{ proxy_config_dir }}/default.conf"
+    mode: '0644'
+
+- name: Copy docker-compose template
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ proxy_project_dir }}/docker-compose.yml"
+    mode: '0644'
+
+- name: Deploy Nginx Reverse Proxy
+  community.docker.docker_compose_v2:
+    project_src: "{{ proxy_project_dir }}"
+    state: present
+    pull: always

@@ -1,0 +1,31 @@
+proxy_image: "nginx:1.25-alpine"
+proxy_container_name: "nginx-proxy"
+proxy_restart_policy: "unless-stopped"
+proxy_network: "{{ global_docker_network | default('team2_net') }}"
+
+# Домен
+proxy_domain: "team2.com"
+
+# Пути
+proxy_project_dir: "{{ base_services_dir }}/reverse-proxy"
+proxy_config_dir: "{{ proxy_project_dir }}/nginx/conf.d"
+proxy_certs_dir: "{{ proxy_project_dir }}/nginx/certs"
+proxy_logs_dir: "{{ proxy_project_dir }}/nginx/logs"
+
+# Имена файлов сертификатов 
+ssl_cert_file: "localhost.crt"
+ssl_key_file: "localhost.key"
+
+#urls
+
+# Portainer (обычно требует слеш в конце, если мы убираем /portainer из пути)
+proxy_upstream_portainer: "http://portainer.team2.lab:9000"
+
+# DBeaver (CloudBeaver)
+proxy_upstream_dbeaver: "http://dbeaver.team2.lab:8978"
+
+# Grafana (тут у вас был хардкод IP)
+proxy_upstream_grafana: "http://10.31.52.108:9099"
+
+# Elgg
+proxy_upstream_elgg: "http://elgg.team2.lab"

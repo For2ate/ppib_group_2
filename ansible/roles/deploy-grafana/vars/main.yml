@@ -1,0 +1,25 @@
+---
+# Основные настройки
+team_id: "2"
+grafana_image: "grafana/grafana:latest"
+grafana_container_name: "grafana.team{{ team_id }}.lab"
+grafana_restart_policy: "unless-stopped"
+
+# Сеть
+# Grafana должна быть в той же сети, что и Prometheus, чтобы видеть его как datasource
+grafana_network: "monitoring-net"
+
+# Порт на хосте
+grafana_port: "9099"
+
+# Учетка администратора
+grafana_admin_user: "admin"
+grafana_admin_password: "admin" 
+
+# Настройки проксирования
+grafana_domain: "team2.com"
+grafana_root_url: "https://{{ grafana_domain }}/grafana/"
+
+# Пути
+grafana_project_dir: "{{ base_services_dir }}/grafana"
+grafana_data_dir: "{{ grafana_project_dir }}/data"

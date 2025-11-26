@@ -1,0 +1,18 @@
+---
+- name: Create Exporters directory
+  file:
+    path: "{{ exporters_project_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Copy docker-compose template
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ exporters_project_dir }}/docker-compose.yml"
+    mode: '0644'
+
+- name: Deploy Exporters
+  community.docker.docker_compose_v2:
+    project_src: "{{ exporters_project_dir }}"
+    state: present
+    pull: always

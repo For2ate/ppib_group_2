@@ -1,0 +1,22 @@
+services:
+  dbeaver:
+    image: "{{ dbeaver_image }}"
+    container_name: "{{ dbeaver_container_name }}"
+    restart: "{{ dbeaver_restart_policy }}"
+    
+    ports:
+      - "{{ dbeaver_port }}:8978"
+    
+    volumes:
+      - "{{ dbeaver_data_dir }}:/opt/cloudbeaver/workspace"
+    
+    environment:
+      - CLOUDBEAVER_ROOT_URI={{ dbeaver_root_uri }}
+      - CB_SERVER_URL={{ dbeaver_server_url }}
+    
+    networks:
+      - "{{ dbeaver_network }}"
+
+networks:
+  "{{ dbeaver_network }}":
+    external: true

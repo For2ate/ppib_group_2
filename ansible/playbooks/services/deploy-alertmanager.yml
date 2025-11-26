@@ -1,0 +1,12 @@
+
+- name: Deploy Alertmanager
+  hosts: monitoring-servers
+  become: true
+  
+  vars_files:
+    - "../../vars/global.yml"
+    - "../../secrets/vault_secrets.yaml"
+    - "../../secrets/alert_secrets.yml"
+
+  roles:
+    - role: roles/deploy-alertmanager

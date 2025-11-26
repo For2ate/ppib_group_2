@@ -1,0 +1,25 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: 'telegram-notifications'
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 1h
+  group_by: ['alertname', 'instance']
+
+receivers:
+  - name: 'telegram-notifications'
+    telegram_configs:
+      - bot_token: '{{ telegram_bot_token }}'
+        chat_id: {{ telegram_chat_id }}
+        parse_mode: 'HTML'
+        message: |
+          {% raw %}
+          🚨 <b>Alert!</b>
+          <b>Status:</b> {{ .Status }}
+          <b>Alert:</b> {{ .CommonLabels.alertname }}
+          <b>Instance:</b> {{ .CommonLabels.instance }}
+          <b>Summary:</b> {{ .CommonAnnotations.summary }}
+          <b>Description:</b> {{ .CommonAnnotations.description }}
+          {% endraw %}

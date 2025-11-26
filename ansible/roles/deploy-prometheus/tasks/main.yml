@@ -1,0 +1,42 @@
+
+- name: Ensure Monitoring Docker network exists
+  community.docker.docker_network:
+    name: "{{ monitoring_network }}"
+    state: present
+
+- name: Create Prometheus directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ prometheus_project_dir }}"
+
+- name: Create Prometheus data directory with correct permissions
+  file:
+    path: "{{ prometheus_data_dir }}"
+    state: directory
+    mode: '0777' 
+
+- name: Copy configuration files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ prometheus_project_dir }}/{{ item.dest }}"
+    mode: '0644'
+  loop:
+    - { src: 'prometheus.yml.j2', dest: 'prometheus.yml' }
+    - { src: 'alert.rules.yml.j2', dest: 'alert.rules.yml' }
+    - { src: 'docker-compose.yml.j2', dest: 'docker-compose.yml' }
+  register: prom_config_files
+
+- name: Deploy Prometheus stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ prometheus_project_dir }}"
+    state: present
+    pull: always
+
+- name: ♻️ Restart Prometheus if config changed
+  community.docker.docker_container:
+    name: "{{ prometheus_container_name }}"
+    restart: true
+  when: prom_config_files.changed 

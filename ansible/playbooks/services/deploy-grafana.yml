@@ -1,0 +1,11 @@
+---
+- name: Deploy Grafana
+  hosts: monitoring-servers
+  become: true
+  
+  vars_files:
+    - "../../vars/global.yml"
+    - "../../secrets/vault_secrets.yaml"
+
+  roles:
+    - role: deploy-grafana

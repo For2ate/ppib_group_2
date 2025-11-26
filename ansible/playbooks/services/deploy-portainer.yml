@@ -1,0 +1,11 @@
+---
+- name: Deploy Portainer
+  hosts: portainer-servers
+  become: true
+  
+  vars_files:
+    - "../../vars/global.yml"
+    - "../../secrets/vault_secrets.yaml"
+
+  roles:
+    - role: deploy-portainer

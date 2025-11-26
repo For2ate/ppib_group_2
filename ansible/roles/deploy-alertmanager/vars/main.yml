@@ -1,0 +1,17 @@
+---
+# Основные настройки
+team_id: "2"
+alertmanager_image: "prom/alertmanager:latest"
+alertmanager_container_name: "alertmanager.team{{ team_id }}.lab"
+alertmanager_port: "9093"
+
+# Сеть (должна совпадать с Prometheus)
+monitoring_network: "monitoring-net"
+
+# Пути
+alertmanager_project_dir: "{{ base_services_dir }}/alertmanager"
+alertmanager_data_dir: "{{ alertmanager_project_dir }}/data"
+
+# Telegram настройки
+telegram_bot_token: '8354915527:AAGjIX7EGQqzTtH5U8MNjY0D0SREz1NPY-8'
+telegram_chat_id: -1003064601252
