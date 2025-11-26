@@ -4,7 +4,41 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
 
+      # Общие настройки
+      ansible_tags:
+        description: 'Ansible Tags (например: config, all)'
+        required: false
+        default: 'all'
+        type: string
+
+      # Галочки для выбора этапов (по умолчанию false, чтобы случайно не запустить лишнее)
+      deploy_base:
+        description: '🛠 Configurate Servers (Base, User, Docker)'
+        type: boolean
+        default: true
+      deploy_proxy:
+        description: '🌐 Deploy Nginx Proxy'
+        type: boolean
+        default: false
+      deploy_site:
+        description: '🚀 Deploy Site (MySQL + Elgg)'
+        type: boolean
+        default: false
+      deploy_dbeaver:
+        description: '🗄️ Deploy DBeaver'
+        type: boolean
+        default: false
+      deploy_portainer:
+        description: '🐳 Deploy Portainer (Agent + Server)'
+        type: boolean
+        default: false
+      deploy_monitoring:
+        description: '📊 Deploy Monitoring (Prometheus, Grafana...)'
+        type: boolean
+        default: false
+        
 env:
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
 
@@ -92,6 +126,7 @@ jobs:
           cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
 
       - name: Configurate servers
+        if: ${{ github.event_name == 'push' || inputs.deploy_base == true }}
         run: |
           cd ansible
           for pb in \
@@ -103,11 +138,13 @@ jobs:
           done
 
       - name: Deploy proxy
+        if: ${{ github.event_name == 'push' || inputs.deploy_proxy == true }}
         run: |
           cd ansible
           ansible-playbook playbooks/services/deploy-reverse-proxy.yml
 
       - name: Deploy site
+        if: ${{ github.event_name == 'push' || inputs.deploy_site == true }}
         run: |
           cd ansible
           for pb in \
@@ -118,17 +155,20 @@ jobs:
           done
 
       - name: Deploy dbeaver
+        if: ${{ github.event_name == 'push' || inputs.deploy_dbeaver == true }}
         run: |
           cd ansible
           ansible-playbook playbooks/services/deploy-dbeaver.yml
 
       - name: Deploy portainer
+        if: ${{ github.event_name == 'push' || inputs.deploy_portainer == true }}
         run: |
           cd ansible
           ansible-playbook playbooks/services/deploy-portainer-agent.yml
           ansible-playbook playbooks/services/deploy-portainer.yml
 
       - name: Deploy monitoring
+        if: ${{ github.event_name == 'push' || inputs.deploy_monitoring == true }}
         run: |
           cd ansible
           for pb in \
@@ -141,3 +181,4 @@ jobs:
           done
 
       - run: rm -f ansible/.vault_pass.txt
+        if: always() 

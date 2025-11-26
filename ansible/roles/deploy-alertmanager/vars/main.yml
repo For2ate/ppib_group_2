@@ -11,7 +11,3 @@ monitoring_network: "monitoring-net"
 # Пути
 alertmanager_project_dir: "{{ base_services_dir }}/alertmanager"
 alertmanager_data_dir: "{{ alertmanager_project_dir }}/data"
-
-# Telegram настройки
-telegram_bot_token: '8354915527:AAGjIX7EGQqzTtH5U8MNjY0D0SREz1NPY-8'
-telegram_chat_id: -1003064601252
