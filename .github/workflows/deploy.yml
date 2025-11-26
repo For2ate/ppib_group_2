@@ -112,6 +112,11 @@ jobs:
             ansible-playbook "$pb" --syntax-check
           done
 
+      - name: Test inventory
+        run: |
+          cd ansible
+          ansible all -m ping -vvv
+
       - name: Cleanup
         if: always()
         run: rm -f ansible/.vault_pass.txt
