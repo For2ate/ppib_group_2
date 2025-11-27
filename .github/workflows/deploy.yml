@@ -89,7 +89,6 @@ jobs:
 
       - name: Prepare Secrets
         run: |
-          cd ansible
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
           mkdir -p secrets inventory/group_vars/all
           echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
@@ -101,7 +100,6 @@ jobs:
 
       - name: Syntax Check
         run: |
-          cd ansible
           for pb in $(find playbooks -name "*.yml"); do
             echo "🔎 Checking $pb"
             ansible-playbook "$pb" --syntax-check
@@ -109,7 +107,6 @@ jobs:
 
       - name: Test inventory
         run: |
-          cd ansible
           ansible all -m ping -vvv
 
       - name: Cleanup
