@@ -6,6 +6,7 @@ services:
     ports:
       - "{{ cms_port }}:80"
     environment:
+      - ELGG_WWWROOT="{{ cms_www_root }}"
       - ELGG_DB_HOST="{{ cms_db_host }}"
       - ELGG_DB_NAME="{{ cms_db_name }}"
       - ELGG_DB_USER="{{ cms_db_user }}"
