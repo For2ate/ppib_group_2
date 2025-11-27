@@ -127,6 +127,10 @@ jobs:
       - name: Run Base Setup
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
           ansible-playbook playbooks/server-configurations/base-setup.yml
           rm .vault_pass.txt
 
@@ -141,8 +145,10 @@ jobs:
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
           mkdir -p secrets inventory/group_vars/all
-          echo "${{ secrets.VAULT_USERS_DATA }}" > secrets/vault_users.yaml
-          ansible-vault encrypt secrets/vault_users.yaml
+          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          echo "${{ secrets.VAULT_USERS_DATA }}"  > secrets/vault_users.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
           ansible-playbook playbooks/server-configurations/user-management.yml
           rm .vault_pass.txt
 
@@ -156,6 +162,11 @@ jobs:
       - name: Run Docker Setup
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          echo "${{ secrets.VAULT_USERS_DATA }}"  > secrets/vault_users.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
           ansible-playbook playbooks/server-configurations/docker-setup.yml
           rm .vault_pass.txt
 
@@ -173,6 +184,10 @@ jobs:
       - name: Deploy Proxy
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
           ansible-playbook playbooks/services/deploy-reverse-proxy.yml
           rm .vault_pass.txt
 
@@ -186,6 +201,11 @@ jobs:
       - name: Deploy MySQL
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          echo "${{ secrets.DB_SECRETS }}"        > secrets/db_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
           mkdir -p secrets inventory/group_vars/all
           echo "${{ secrets.DB_SECRETS }}" > secrets/db_secrets.yaml
           ansible-vault encrypt secrets/db_secrets.yaml
@@ -203,6 +223,11 @@ jobs:
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
           mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          echo "${{ secrets.DB_SECRETS }}"        > secrets/db_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
+          mkdir -p secrets inventory/group_vars/all
           echo "${{ secrets.DB_SECRETS }}" > secrets/db_secrets.yaml
           ansible-vault encrypt secrets/db_secrets.yaml
           ansible-playbook playbooks/services/deploy-elgg.yml
@@ -218,6 +243,10 @@ jobs:
       - name: Deploy DBeaver
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
           ansible-playbook playbooks/services/deploy-dbeaver.yml
           rm .vault_pass.txt
 
@@ -231,6 +260,10 @@ jobs:
       - name: Deploy Portainer
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
           ansible-playbook playbooks/services/deploy-portainer-agent.yml
           ansible-playbook playbooks/services/deploy-portainer.yml
           rm .vault_pass.txt
@@ -248,6 +281,10 @@ jobs:
       - name: Deploy Prometheus
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}"     > secrets/vault_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
           ansible-playbook playbooks/services/deploy-prometheus.yml
           rm .vault_pass.txt
 
@@ -260,6 +297,10 @@ jobs:
       - name: Deploy Exporters
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
+          mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}"       > secrets/vault_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
           ansible-playbook playbooks/services/deploy-exporters.yml
           rm .vault_pass.txt
 
@@ -273,8 +314,10 @@ jobs:
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
           mkdir -p secrets inventory/group_vars/all
+          echo "${{ secrets.VAULT_SECRETS }}"       > secrets/vault_secrets.yaml
           echo "${{ secrets.VAULT_ALERT_SECRETS }}" > secrets/alert_secrets.yml
-          ansible-vault encrypt secrets/alert_secrets.yml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
           ansible-playbook playbooks/services/deploy-alertmanager.yml
           rm .vault_pass.txt
 
@@ -288,7 +331,8 @@ jobs:
         run: |
           echo "${{ secrets.VAULT_PASS }}" > .vault_pass.txt
           mkdir -p secrets inventory/group_vars/all
-          echo "${{ secrets.VAULT_SECRETS }}" > secrets/vault_secrets.yaml
-          ansible-vault encrypt secrets/vault_secrets.yaml
+          echo "${{ secrets.VAULT_SECRETS }}"       > secrets/vault_secrets.yaml
+          ansible-vault encrypt secrets/*.yaml
+          cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
           ansible-playbook playbooks/services/deploy-grafana.yml
           rm .vault_pass.txt
