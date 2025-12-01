@@ -16,6 +16,7 @@ services:
             - "--storage.tsdb.path=/prometheus"
             - "--web.enable-lifecycle" # Позволяет делать reload конфига через API
             - "--storage.tsdb.retention.time=15d" # Хранить данные 15 дней
+            - '--storage.tsdb.retention.size=500MB'
         networks:
             - "{{ monitoring_network }}"
 
