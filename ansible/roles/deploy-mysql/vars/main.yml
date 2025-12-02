@@ -9,7 +9,7 @@ db_port: "3306"
 db_network: "{{ global_docker_network }}"
 
 # Пути для данных и конфигурации (Bind Mount)
-db_base_path: "{{ base_services_dir }}"
+db_base_path: /var/opt_data/mysql_db
 db_data_path: "{{ db_base_path }}/{{ db_container_name }}/data"
 db_project_path: "{{ db_base_path }}/{{ db_container_name }}/config"
 

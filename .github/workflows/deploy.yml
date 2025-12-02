@@ -219,9 +219,6 @@ jobs:
           echo "${{ secrets.DB_SECRETS }}"        > secrets/db_secrets.yaml
           ansible-vault encrypt secrets/*.yaml
           cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
-          mkdir -p secrets inventory/group_vars/all
-          echo "${{ secrets.DB_SECRETS }}" > secrets/db_secrets.yaml
-          ansible-vault encrypt secrets/db_secrets.yaml
           ansible-playbook playbooks/services/deploy-mysql.yml
           rm .vault_pass.txt
 
@@ -240,9 +237,6 @@ jobs:
           echo "${{ secrets.DB_SECRETS }}"        > secrets/db_secrets.yaml
           ansible-vault encrypt secrets/*.yaml
           cp secrets/vault_secrets.yaml inventory/group_vars/all/vault_secrets.yaml
-          mkdir -p secrets inventory/group_vars/all
-          echo "${{ secrets.DB_SECRETS }}" > secrets/db_secrets.yaml
-          ansible-vault encrypt secrets/db_secrets.yaml
           ansible-playbook playbooks/services/deploy-elgg.yml
           rm .vault_pass.txt
 
